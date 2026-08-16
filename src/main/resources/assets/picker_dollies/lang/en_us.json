@@ -1,0 +1,13 @@
+{
+  "itemGroup.picker_dollies": "Example Mod Tab",
+  "block.picker_dollies.example_block": "Example Block",
+  "item.picker_dollies.example_item": "Example Item",
+
+  "picker_dollies.configuration.title": "Picker Dollies Configs",
+  "picker_dollies.configuration.section.picker_dollies.common.toml": "Picker Dollies Configs",
+  "picker_dollies.configuration.section.picker_dollies.common.toml.title": "Picker Dollies Configs",
+  "picker_dollies.configuration.items": "Item List",
+  "picker_dollies.configuration.logDirtBlock": "Log Dirt Block",
+  "picker_dollies.configuration.magicNumberIntroduction": "Magic Number Text",
+  "picker_dollies.configuration.magicNumber": "Magic Number"
+}
