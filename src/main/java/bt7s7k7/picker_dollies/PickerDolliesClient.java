@@ -1,5 +1,7 @@
 package bt7s7k7.picker_dollies;
 
+import bt7s7k7.picker_dollies.data.WorldClientData;
+import bt7s7k7.picker_dollies.interaction.SelectionRenderer;
 import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -22,6 +24,8 @@ public class PickerDolliesClient {
 		container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
 
 		ClientInputEvents.register();
+		WorldClientData.register();
+		SelectionRenderer.register();
 	}
 
 	@SubscribeEvent

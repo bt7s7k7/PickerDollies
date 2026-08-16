@@ -1,0 +1,116 @@
+package bt7s7k7.picker_dollies.interaction;
+
+import java.util.List;
+
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+
+import bt7s7k7.picker_dollies.PickerDollies;
+import io.netty.buffer.ByteBuf;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.GlobalPos;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.Clearable;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
+
+public class Selection implements Area {
+	protected ResourceKey<Level> dimension = null;
+	protected BoundingBox bounds = null;
+
+	@Override
+	public ResourceKey<Level> getDimension() {
+		return this.dimension;
+	}
+
+	@Override
+	public BoundingBox getBounds() {
+		return this.bounds;
+	}
+
+	public Selection() {}
+
+	public Selection(ResourceKey<Level> dimension, BoundingBox boundingBox) {
+		this.dimension = dimension;
+		this.bounds = boundingBox;
+	}
+
+	public boolean isActive() {
+		return this.bounds != null;
+	}
+
+	public Selection activeOrNull() {
+		if (this.isActive()) return this;
+		return null;
+	}
+
+	public void clear() {
+		this.dimension = null;
+		this.bounds = null;
+	}
+
+	public Selection reset(GlobalPos start) {
+		return this.reset(start.dimension(), new BoundingBox(start.pos()));
+	}
+
+	public Selection reset(ResourceKey<Level> dimension, BoundingBox boundingBox) {
+		this.dimension = dimension;
+		this.bounds = boundingBox;
+		return this;
+	}
+
+	public Selection expand(GlobalPos position) {
+		if (position.dimension() != this.dimension) {
+			this.reset(position);
+			return this;
+		}
+
+		this.bounds = BoundingBox.encapsulatingBoxes(List.of(this.bounds, new BoundingBox(position.pos()))).get();
+		return this;
+	}
+
+	@Override
+	public ServerLevel getLevel() {
+		if (!this.isActive()) {
+			PickerDollies.LOGGER.error("Received command with an empty selection");
+			return null;
+		}
+
+		return Area.super.getLevel();
+	}
+
+	public StructureTemplate getStructure() {
+		var level = this.getLevel();
+		if (level == null) return null;
+
+		var structure = new StructureTemplate();
+		structure.fillFromWorld(level, this.getPos(), this.getSize(), false, Blocks.AIR);
+
+		return structure;
+	}
+
+	public void fillBlocks(BlockState blockState) {
+		var level = this.getLevel();
+		if (level == null) return;
+
+		for (var pos : BlockPos.betweenClosed(this.getPos(), this.getPos().offset(this.getSize()).offset(-1, -1, -1))) {
+			var blockEntity = level.getBlockEntity(pos);
+			Clearable.tryClear(blockEntity);
+
+			level.setBlock(pos, blockState, Block.UPDATE_CLIENTS);
+		}
+	}
+
+	public static Codec<Selection> CODEC = RecordCodecBuilder.create(instance -> (instance.group(
+			Level.RESOURCE_KEY_CODEC.fieldOf("dimension").forGetter(Selection::getDimension),
+			BoundingBox.CODEC.fieldOf("bounds").forGetter(Selection::getBounds))).apply(instance, Selection::new));
+
+	public static StreamCodec<ByteBuf, Selection> STREAM_CODEC = ByteBufCodecs.fromCodec(CODEC);
+}
