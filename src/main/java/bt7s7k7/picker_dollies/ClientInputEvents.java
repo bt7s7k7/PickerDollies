@@ -116,9 +116,16 @@ public class ClientInputEvents {
 	}
 
 	public static final Stream<Component> startSelectionHelp() {
-		return Stream.of(Component.translatable("gui.picker_dollies.start_selection", Component.literal("[").withStyle(ChatFormatting.WHITE)
+		var base = Component.translatable("gui.picker_dollies.start_selection", Component.literal("[").withStyle(ChatFormatting.WHITE)
 				.append(Component.keybind(PickerDolliesClient.CONFIRM_OPERATION.get().getName()))
-				.append(Component.literal("]"))).withStyle(ChatFormatting.GRAY));
+				.append(Component.literal("]"))).withStyle(ChatFormatting.GRAY);
+
+		if (SharedClientData.getStructureData() == null) return Stream.of(base);
+
+		return Stream.of(base,
+				Component.translatable("gui.picker_dollies.paste_prompt", Component.literal("[").withStyle(ChatFormatting.WHITE)
+						.append(Component.keybind(PickerDolliesClient.PASTE.get().getName()))
+						.append(Component.literal("]"))).withStyle(ChatFormatting.GRAY));
 	}
 
 	public static final Stream<Component> baseSelectionHelp() {
@@ -132,6 +139,14 @@ public class ClientInputEvents {
 				Component.translatable("gui.picker_dollies.new_selection", Component.literal("[").withStyle(ChatFormatting.WHITE)
 						.append(Component.keybind(PickerDolliesClient.OPERATION_PICK.get().getName()))
 						.append(Component.literal("]"))).withStyle(ChatFormatting.GRAY),
+				Component.translatable("gui.picker_dollies.copy_or_cut_prompt",
+						Component.literal("[").withStyle(ChatFormatting.WHITE)
+								.append(Component.keybind(PickerDolliesClient.COPY.get().getName()))
+								.append(Component.literal("]")),
+						Component.literal("[").withStyle(ChatFormatting.WHITE)
+								.append(Component.keybind(PickerDolliesClient.CUT.get().getName()))
+								.append(Component.literal("]")))
+						.withStyle(ChatFormatting.GRAY),
 				Component.translatable("gui.picker_dollies.start_operation",
 						Component.empty().append(SharedClientData.getSelectedOperation().getName()).withStyle(ChatFormatting.GOLD),
 						Component.literal("[").withStyle(ChatFormatting.WHITE)
