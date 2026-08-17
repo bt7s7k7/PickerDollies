@@ -46,9 +46,13 @@ public class CommandHandler {
 			var structure = selection.getStructure();
 			if (structure == null) return;
 
-			// Apply structure first to prevent loss if we error out
-			payload.to().applyStructure(structure);
 			selection.fillBlocks(Blocks.AIR.defaultBlockState());
+
+			var destination = payload.to();
+
+			// If there are already blocks in the target are, we want to make them drop to prevent
+			// material loss. This is only useful in survival.
+			destination.applyStructure(structure, !ctx.player().isCreative());
 		});
 	}
 
