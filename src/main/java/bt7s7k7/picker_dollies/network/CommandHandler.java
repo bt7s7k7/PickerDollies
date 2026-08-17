@@ -1,5 +1,6 @@
 package bt7s7k7.picker_dollies.network;
 
+import bt7s7k7.picker_dollies.PickerDollies;
 import bt7s7k7.picker_dollies.data.ServerPlayerData;
 import bt7s7k7.picker_dollies.data.SharedClientData;
 import net.minecraft.world.level.block.Blocks;
@@ -15,7 +16,14 @@ public class CommandHandler {
 		final PayloadRegistrar registrar = event.registrar("1");
 
 		registrar.commonToServer(SelectionContentRequest.TYPE, SelectionContentRequest.STREAM_CODEC, (payload, ctx) -> {
-			var structure = payload.selection().getStructure();
+			var selection = payload.selection();
+
+			if (!selection.isWithinLimits()) {
+				PickerDollies.LOGGER.error("Client tried ot execute SelectionContentRequest with a selection outside limits");
+				return;
+			}
+
+			var structure = selection.getStructure();
 			if (structure == null) return;
 
 			ServerPlayerData.of(ctx.player()).structure = structure;
@@ -29,6 +37,12 @@ public class CommandHandler {
 
 		registrar.commonToServer(MovementCommand.TYPE, MovementCommand.STREAM_CODEC, (payload, ctx) -> {
 			var selection = payload.from();
+
+			if (!selection.isWithinLimits()) {
+				PickerDollies.LOGGER.error("Client tried ot execute MovementCommand with a selection outside limits");
+				return;
+			}
+
 			var structure = selection.getStructure();
 			if (structure == null) return;
 

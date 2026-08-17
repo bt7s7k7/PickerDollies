@@ -98,7 +98,16 @@ public class SelectionRenderer implements DebugRenderer.SimpleDebugRenderer {
 	@Override
 	public void render(PoseStack poseStack, MultiBufferSource bufferSource, double camX, double camY, double camZ) {
 		var data = WorldClientData.getInstance();
-		this.renderSelection(poseStack, bufferSource, camX, camY, camZ, data.selection.activeOrNull(), FastColor.ARGB32.color(0, 255, 255), 0.01);
+
+		var selectionColor = 0xff00ffff;
+		var selection = data.selection.activeOrNull();
+
+		// Indicate selection outside max limit with a red box
+		if (selection != null && !selection.isWithinLimits()) {
+			selectionColor = 0xffff0000;
+		}
+
+		this.renderSelection(poseStack, bufferSource, camX, camY, camZ, selection, selectionColor, 0.01);
 
 		if (data.activeOperation != null) {
 			// Larger inflation for this selection to make the operation area render in front of the selection

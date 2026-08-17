@@ -2,7 +2,6 @@ package bt7s7k7.picker_dollies;
 
 import bt7s7k7.picker_dollies.data.WorldClientData;
 import bt7s7k7.picker_dollies.interaction.SelectionRenderer;
-import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
@@ -29,9 +28,5 @@ public class PickerDolliesClient {
 	}
 
 	@SubscribeEvent
-	static void onClientSetup(FMLClientSetupEvent event) {
-		// Some client setup code
-		PickerDollies.LOGGER.info("HELLO FROM CLIENT SETUP");
-		PickerDollies.LOGGER.info("MINECRAFT NAME >> {}", Minecraft.getInstance().getUser().getName());
-	}
+	static void onClientSetup(FMLClientSetupEvent event) {}
 }

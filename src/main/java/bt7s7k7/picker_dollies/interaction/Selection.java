@@ -106,6 +106,11 @@ public class Selection implements Area {
 
 			level.setBlock(pos, blockState, Block.UPDATE_CLIENTS);
 		}
+	public boolean isWithinLimits() {
+		var sizeX = this.bounds.getXSpan();
+		var sizeY = this.bounds.getYSpan();
+		var sizeZ = this.bounds.getZSpan();
+		return sizeX * sizeY * sizeZ <= Config.MAX_BLOCKS.getAsInt();
 	}
 
 	public static Codec<Selection> CODEC = RecordCodecBuilder.create(instance -> (instance.group(

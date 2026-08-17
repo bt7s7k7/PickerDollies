@@ -110,6 +110,10 @@ public class ClientInputEvents {
 			if (sizeX + sizeY + sizeZ == 3) {
 				return BASE_SELECTION_HELP.stream();
 			} else {
+				if (!selection.isWithinLimits()) {
+					return Stream.concat(Stream.of(Component.literal("Selection too large (Max: " + Config.MAX_BLOCKS.getAsInt() + ")").withStyle(ChatFormatting.RED)), BASE_SELECTION_HELP.stream());
+				}
+
 				return Stream.concat(Stream.of(Component.literal("Selection: [").withStyle(ChatFormatting.AQUA)
 						.append(Component.literal("" + sizeX).withStyle(ChatFormatting.GOLD)).append(Component.literal(", "))
 						.append(Component.literal("" + sizeY).withStyle(ChatFormatting.GOLD)).append(Component.literal(", "))
@@ -138,7 +142,7 @@ public class ClientInputEvents {
 		var activeOperation = WorldClientData.getInstance().activeOperation;
 
 		// If there is no active operation, but we have a selection, activate an operation
-		if (selection.isActive() && activeOperation == null) {
+		if (selection.isActive() && selection.isWithinLimits() && activeOperation == null) {
 			activeOperation = MovementOperation.activate();
 		}
 
