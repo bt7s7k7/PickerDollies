@@ -2,6 +2,7 @@ package bt7s7k7.picker_dollies.interaction;
 
 import java.util.stream.Stream;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.network.chat.Component;
 
@@ -18,4 +19,5 @@ public interface ActiveOperation {
 
 	public void apply();
 
+	public Stream<BlockPos> getPreviewRenderPositions();
 }

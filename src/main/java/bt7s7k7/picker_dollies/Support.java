@@ -42,15 +42,12 @@ public final class Support {
 		return methods;
 	}
 
-	public static <T> T getField(Object object, String fieldName, Class<?> sourceClass) {
+	public static Object getField(Object object, String fieldName, Class<?> sourceClass) {
 		try {
 			var field = sourceClass.getDeclaredField(fieldName);
 			field.setAccessible(true);
 
-			@SuppressWarnings("unchecked")
-			var value = (T) field.get(object);
-
-			return value;
+			return field.get(object);
 		} catch (NoSuchFieldException | SecurityException | IllegalAccessException exception) {
 			throw new RuntimeException(exception);
 		}

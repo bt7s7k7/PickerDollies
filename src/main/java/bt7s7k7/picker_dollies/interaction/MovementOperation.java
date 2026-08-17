@@ -3,10 +3,12 @@ package bt7s7k7.picker_dollies.interaction;
 import java.util.stream.Stream;
 
 import bt7s7k7.picker_dollies.ClientInputEvents;
+import bt7s7k7.picker_dollies.data.SharedClientData;
 import bt7s7k7.picker_dollies.data.WorldClientData;
 import bt7s7k7.picker_dollies.network.MovementCommand;
 import bt7s7k7.picker_dollies.network.SelectionContentRequest;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -23,6 +25,11 @@ public class MovementOperation implements ActiveOperation {
 	public MovementOperation(Selection source) {
 		this.source = source;
 		this.destination = DestinationArea.from(source);
+	}
+
+	@Override
+	public Stream<BlockPos> getPreviewRenderPositions() {
+		return Stream.of(this.destination.getPos());
 	}
 
 	@Override
@@ -66,6 +73,10 @@ public class MovementOperation implements ActiveOperation {
 		var data = WorldClientData.getInstance();
 		var operation = new MovementOperation(data.selection);
 		data.activeOperation = operation;
+
+		// Reset the structure to remove potentially stale data that would be displayed until we get a response from the server
+		SharedClientData.setStructure(null);
+
 		PacketDistributor.sendToServer(new SelectionContentRequest(data.selection));
 		return operation;
 	}
