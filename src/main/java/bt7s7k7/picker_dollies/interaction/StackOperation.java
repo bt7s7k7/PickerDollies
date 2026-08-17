@@ -5,6 +5,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import bt7s7k7.picker_dollies.ClientInputEvents;
+import bt7s7k7.picker_dollies.Config;
 import bt7s7k7.picker_dollies.PickerDolliesClient;
 import bt7s7k7.picker_dollies.data.SharedClientData;
 import bt7s7k7.picker_dollies.data.WorldClientData;
@@ -16,6 +17,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -170,6 +172,10 @@ public class StackOperation implements ActiveOperation {
 		public Component getName() {
 			return Component.translatable("operation.picker_dollies.stack");
 		}
-	};
 
+		@Override
+		public boolean canActivate(Player player) {
+			return !Config.DISABLE_FREE_OPERATIONS_IN_SURVIVAL.getAsBoolean() || player.isCreative();
+		}
+	};
 }

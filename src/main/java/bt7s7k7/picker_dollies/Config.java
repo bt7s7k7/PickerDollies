@@ -14,6 +14,10 @@ public class Config {
 			.comment("Maximum number of blocks supported per operation. In practice this limits the size of the initial selection.")
 			.defineInRange("maxBlocks", 64 * 64 * 64, 0, Integer.MAX_VALUE);
 
+	public static final ModConfigSpec.BooleanValue DISABLE_FREE_OPERATIONS_IN_SURVIVAL = SERVER_BUILDER
+			.comment("Disables all operations, which allow the player to duplicate materials, for players in survival mode. This includes pasting from the clipboard, instead the cut operation will drop items.")
+			.define("disableFreeOperationsInSurvival", false);
+
 	static final ModConfigSpec SERVER_SPEC = SERVER_BUILDER.build();
 
 	private static final ModConfigSpec.Builder CLIENT_BUILDER = new ModConfigSpec.Builder();

@@ -1,5 +1,6 @@
 package bt7s7k7.picker_dollies.network;
 
+import bt7s7k7.picker_dollies.Config;
 import bt7s7k7.picker_dollies.PickerDollies;
 import bt7s7k7.picker_dollies.data.ServerPlayerData;
 import bt7s7k7.picker_dollies.data.SharedClientData;
@@ -69,6 +70,11 @@ public class CommandHandler {
 
 			var destination = payload.to();
 
+			if (Config.DISABLE_FREE_OPERATIONS_IN_SURVIVAL.getAsBoolean() && !ctx.player().isCreative()) {
+				PickerDollies.LOGGER.error("Client tried ot execute StampCommand in survival but DISABLE_FREE_OPERATIONS_IN_SURVIVAL is enabled");
+				return;
+			}
+
 			// If there are already blocks in the target are, we want to make them drop to prevent
 			// material loss. This is only useful in survival. I put it here because I copied this
 			// code from MovementCommand, but StampCommand is not designed to be survival friendly,
@@ -85,6 +91,11 @@ public class CommandHandler {
 
 			var destination = payload.to();
 			var positions = payload.positions();
+
+			if (Config.DISABLE_FREE_OPERATIONS_IN_SURVIVAL.getAsBoolean() && !ctx.player().isCreative()) {
+				PickerDollies.LOGGER.error("Client tried ot execute StampManyCommand in survival but DISABLE_FREE_OPERATIONS_IN_SURVIVAL is enabled");
+				return;
+			}
 
 			for (var position : positions) {
 				destination.setPos(position);
@@ -103,7 +114,14 @@ public class CommandHandler {
 			var structure = selection.getStructure();
 			if (structure == null) return;
 
-			selection.fillBlocks(Blocks.AIR.defaultBlockState());
+			if (Config.DISABLE_FREE_OPERATIONS_IN_SURVIVAL.getAsBoolean() && !ctx.player().isCreative()) {
+				// When cheat mode is off, the survival player will not be able to past the cut
+				// blocks back into the world -- we drop them to preserve resources.
+				selection.destroyBlocks();
+			} else {
+				selection.fillBlocks(Blocks.AIR.defaultBlockState());
+			}
+
 			ServerPlayerData.of(ctx.player()).structure = structure;
 			ctx.reply(new SelectionContentResponse(new StructureData(structure)));
 		});

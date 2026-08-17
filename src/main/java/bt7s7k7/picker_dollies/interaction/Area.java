@@ -65,6 +65,15 @@ public interface Area {
 		return level;
 	}
 
+	public default void destroyBlocks() {
+		var level = this.getLevel();
+		if (level == null) return;
+
+		for (var pos : BlockPos.betweenClosed(this.getPos(), this.getPos().offset(this.getSize()).offset(-1, -1, -1))) {
+			level.destroyBlock(pos, true);
+		}
+	}
+
 	public default void fillBlocks(BlockState blockState) {
 		var level = this.getLevel();
 		if (level == null) return;

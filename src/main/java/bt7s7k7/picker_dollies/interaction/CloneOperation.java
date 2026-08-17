@@ -1,10 +1,12 @@
 package bt7s7k7.picker_dollies.interaction;
 
+import bt7s7k7.picker_dollies.Config;
 import bt7s7k7.picker_dollies.data.SharedClientData;
 import bt7s7k7.picker_dollies.data.WorldClientData;
 import bt7s7k7.picker_dollies.network.CopyCommand;
 import bt7s7k7.picker_dollies.network.StampCommand;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 public class CloneOperation extends BaseDestinationOperation {
@@ -43,6 +45,11 @@ public class CloneOperation extends BaseDestinationOperation {
 		@Override
 		public Component getName() {
 			return Component.translatable("operation.picker_dollies.clone");
+		}
+
+		@Override
+		public boolean canActivate(Player player) {
+			return !Config.DISABLE_FREE_OPERATIONS_IN_SURVIVAL.getAsBoolean() || player.isCreative();
 		}
 	};
 }

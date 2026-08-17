@@ -8,6 +8,8 @@
 	"picker_dollies.configuration.shouldRenderPreview.tooltip": "Determines if a preview for an operation result should be displayed, for example for a move operation this will be the blocks that will be placed. This feature is not super optimised, so disable this if you get frame drops.",
 	"picker_dollies.configuration.displayDirectionIndicator": "Display Direction Indicator",
 	"picker_dollies.configuration.displayDirectionIndicator.tooltip": "When using the wand, displays an indicator next to your crosshair that shows which in axis the active area will move when scrolling.",
+	"picker_dollies.configuration.disableFreeOperationsInSurvival": "Disable free operations in survival",
+	"picker_dollies.configuration.disableFreeOperationsInSurvival.tooltip": "Disables all operations, which allow the player to duplicate materials, for players in survival mode. This includes pasting from the clipboard, instead the cut operation will drop items.",
 	"picker_dollies.configuration.section.picker.dollies.client.toml": "Picker Dollies Client Config",
 	"picker_dollies.configuration.section.picker.dollies.client.toml.title": "Picker Dollies Client Config",
 	"picker_dollies.configuration.section.picker.dollies.server.toml": "Picker Dollies Server Config",

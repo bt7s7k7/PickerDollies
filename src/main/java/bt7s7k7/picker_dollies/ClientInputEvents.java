@@ -120,7 +120,7 @@ public class ClientInputEvents {
 				.append(Component.keybind(PickerDolliesClient.CONFIRM_OPERATION.get().getName()))
 				.append(Component.literal("]"))).withStyle(ChatFormatting.GRAY);
 
-		if (SharedClientData.getStructureData() == null) return Stream.of(base);
+		if (SharedClientData.getStructureData() == null || !CloneOperation.ACTIVATOR.canActivate()) return Stream.of(base);
 
 		return Stream.of(base,
 				Component.translatable("gui.picker_dollies.paste_prompt", Component.literal("[").withStyle(ChatFormatting.WHITE)
