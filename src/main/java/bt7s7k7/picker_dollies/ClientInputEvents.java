@@ -4,6 +4,7 @@ import java.util.stream.Stream;
 
 import org.joml.Matrix4d;
 import org.joml.Vector3d;
+import org.spongepowered.include.com.google.common.base.Objects;
 
 import com.mojang.blaze3d.platform.InputConstants;
 
@@ -36,7 +37,7 @@ import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 
 @EventBusSubscriber(modid = PickerDollies.MODID, value = Dist.CLIENT)
 public class ClientInputEvents {
-	private static GlobalPos getTargetedBlock(Player player) {
+	private static GlobalPos getTargetedBlock(Player player, boolean above) {
 		// 1. Get the level (dimension) directly from the player
 		var level = player.level();
 
@@ -52,6 +53,9 @@ public class ClientInputEvents {
 
 		// 4. Extract the BlockPos
 		var targetPos = blockHitResult.getBlockPos();
+		if (above) {
+			targetPos = targetPos.offset(blockHitResult.getDirection().getNormal());
+		}
 
 		return new GlobalPos(level.dimension(), targetPos);
 	}
@@ -136,6 +140,9 @@ public class ClientInputEvents {
 						.append(Component.literal("]"))).withStyle(ChatFormatting.GRAY),
 				Component.translatable("gui.picker_dollies.cancel_operation", Component.literal("[").withStyle(ChatFormatting.WHITE)
 						.append(Component.keybind(PickerDolliesClient.CANCEL_OPERATION.get().getName()))
+						.append(Component.literal("]"))).withStyle(ChatFormatting.GRAY),
+				Component.translatable("gui.picker_dollies.move_to_mouse", Component.literal("[").withStyle(ChatFormatting.WHITE)
+						.append(Component.keybind(PickerDolliesClient.MISC_OPERATION_ACTION.get().getName()))
 						.append(Component.literal("]"))).withStyle(ChatFormatting.GRAY));
 	}
 
@@ -272,7 +279,7 @@ public class ClientInputEvents {
 				return;
 			}
 
-			var target = getTargetedBlock(player);
+			var target = getTargetedBlock(player, false);
 			if (target == null) return;
 			var selection = WorldClientData.getInstance().selection;
 			// Additional check to prevent expanding a selection between sublevels
@@ -296,7 +303,7 @@ public class ClientInputEvents {
 				return;
 			}
 
-			var target = getTargetedBlock(player);
+			var target = getTargetedBlock(player, false);
 			if (target == null) return;
 			WorldClientData.getInstance().selection.clear();
 		}
@@ -305,10 +312,13 @@ public class ClientInputEvents {
 			if (event != null) event.setCanceled(true);
 
 			if (activeOperation != null) {
+				var target = getTargetedBlock(player, true);
+				if (target == null) return;
+				activeOperation.moveTo(target);
 				return;
 			}
 
-			var target = getTargetedBlock(player);
+			var target = getTargetedBlock(player, false);
 			if (target == null) return;
 			WorldClientData.getInstance().selection.reset(target);
 		}

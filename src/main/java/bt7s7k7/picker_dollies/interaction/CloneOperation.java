@@ -7,6 +7,7 @@ import bt7s7k7.picker_dollies.data.WorldClientData;
 import bt7s7k7.picker_dollies.network.SelectionContentRequest;
 import bt7s7k7.picker_dollies.network.StampCommand;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.GlobalPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.Mirror;
@@ -47,6 +48,11 @@ public class CloneOperation implements ActiveOperation {
 	@Override
 	public void move(Vec3i offset) {
 		this.destination.applyOffset(offset);
+	}
+
+	@Override
+	public void moveTo(GlobalPos globalPos) {
+		this.destination.moveTo(globalPos);
 	}
 
 	@Override

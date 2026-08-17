@@ -28,6 +28,7 @@
 	"gui.picker_dollies.select_operation_footer": "Scroll to select",
 	"gui.picker_dollies.apply_operation": "Press %s to apply",
 	"gui.picker_dollies.cancel_operation": "Press %s to cancel",
+	"gui.picker_dollies.move_to_mouse": "Press %s to place here",
 	"gui.picker_dollies.selection_too_large": "Selection too large (Max: %s)",
 	"gui.picker_dollies.selection": "Selection: [%s, %s, %s]",
 	"gui.picker_dollies.move_state": "Offset: [%s, %s, %s] | Mirror: %s | Rotation: %s°",

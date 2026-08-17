@@ -5,10 +5,12 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import io.netty.buffer.ByteBuf;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.GlobalPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
@@ -186,6 +188,27 @@ public class DestinationArea implements Area {
 	public DestinationArea applyOffset(Vec3i offset) {
 		this.bounds = this.bounds.moved(offset.getX(), offset.getY(), offset.getZ());
 		this.offset = this.offset.offset(offset);
+		return this;
+	}
+
+	public DestinationArea moveTo(GlobalPos globalPos) {
+		var pos = globalPos.pos();
+		var bounds = this.getBounds();
+		var closest = new BlockPos(
+				Mth.clamp(pos.getX(), bounds.minX(), bounds.maxX()),
+				Mth.clamp(pos.getY(), bounds.minY(), bounds.maxY()),
+				Mth.clamp(pos.getZ(), bounds.minZ(), bounds.maxZ()));
+
+		var delta = pos.subtract(closest);
+
+		if (globalPos.dimension().equals(this.dimension)) {
+			return this.applyOffset(delta);
+		}
+
+		this.offset = Vec3i.ZERO;
+		this.dimension = globalPos.dimension();
+		this.bounds = this.bounds.moved(delta.getX(), delta.getY(), delta.getZ());
+
 		return this;
 	}
 

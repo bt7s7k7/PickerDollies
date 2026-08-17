@@ -5,6 +5,7 @@ import java.util.stream.Stream;
 import bt7s7k7.picker_dollies.ClientInputEvents;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.GlobalPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.Mirror;
@@ -29,6 +30,8 @@ public interface ActiveOperation {
 	public void cancel();
 
 	public void move(Vec3i offset);
+
+	public void moveTo(GlobalPos globalPos);
 
 	public void apply();
 
