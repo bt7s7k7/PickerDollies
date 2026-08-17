@@ -54,6 +54,22 @@ public class CommandHandler {
 			// material loss. This is only useful in survival.
 			destination.applyStructure(structure, !ctx.player().isCreative());
 		});
+
+		registrar.commonToServer(StampCommand.TYPE, StampCommand.STREAM_CODEC, (payload, ctx) -> {
+			var structure = ServerPlayerData.of(ctx.player()).structure;
+			if (structure == null) {
+				PickerDollies.LOGGER.error("Client tried ot execute StampCommand without a server-side structure");
+				return;
+			}
+
+			var destination = payload.to();
+
+			// If there are already blocks in the target are, we want to make them drop to prevent
+			// material loss. This is only useful in survival. I put it here because I copied this
+			// code from MovementCommand, but StampCommand is not designed to be survival friendly,
+			// so this might not serve a purpose.
+			destination.applyStructure(structure, !ctx.player().isCreative());
+		});
 	}
 
 	public static void register() {

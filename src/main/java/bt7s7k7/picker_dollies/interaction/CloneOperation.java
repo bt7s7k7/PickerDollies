@@ -2,12 +2,10 @@ package bt7s7k7.picker_dollies.interaction;
 
 import java.util.stream.Stream;
 
-import bt7s7k7.picker_dollies.ClientInputEvents;
 import bt7s7k7.picker_dollies.data.SharedClientData;
 import bt7s7k7.picker_dollies.data.WorldClientData;
-import bt7s7k7.picker_dollies.network.MovementCommand;
 import bt7s7k7.picker_dollies.network.SelectionContentRequest;
-import net.minecraft.ChatFormatting;
+import bt7s7k7.picker_dollies.network.StampCommand;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.network.chat.Component;
@@ -16,16 +14,13 @@ import net.minecraft.world.level.block.Rotation;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 public class CloneOperation implements ActiveOperation {
-	public Selection source;
 	public DestinationArea destination;
 
-	public CloneOperation(Selection source, DestinationArea destination) {
-		this.source = source;
+	public CloneOperation(DestinationArea destination) {
 		this.destination = destination;
 	}
 
 	public CloneOperation(Selection source) {
-		this.source = source;
 		this.destination = DestinationArea.from(source);
 	}
 
@@ -45,15 +40,6 @@ public class CloneOperation implements ActiveOperation {
 	}
 
 	@Override
-	public Stream<Component> getHelpMessage() {
-		return Stream.concat(Stream.of(Component.translatable("gui.picker_dollies.offset",
-				Component.literal("" + this.destination.offset.getX()).withStyle(ChatFormatting.GOLD),
-				Component.literal("" + this.destination.offset.getY()).withStyle(ChatFormatting.GOLD),
-				Component.literal("" + this.destination.offset.getZ()).withStyle(ChatFormatting.GOLD))),
-				ClientInputEvents.baseOperationHelp());
-	}
-
-	@Override
 	public void cancel() {
 		WorldClientData.getInstance().activeOperation = null;
 	}
@@ -65,10 +51,7 @@ public class CloneOperation implements ActiveOperation {
 
 	@Override
 	public void apply() {
-		PacketDistributor.sendToServer(new MovementCommand(this.source.clone(), this.destination));
-		var data = WorldClientData.getInstance();
-		data.activeOperation = null;
-		data.selection.clear();
+		PacketDistributor.sendToServer(new StampCommand(this.destination));
 	}
 
 	@Override

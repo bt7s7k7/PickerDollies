@@ -2,12 +2,10 @@ package bt7s7k7.picker_dollies.interaction;
 
 import java.util.stream.Stream;
 
-import bt7s7k7.picker_dollies.ClientInputEvents;
 import bt7s7k7.picker_dollies.data.SharedClientData;
 import bt7s7k7.picker_dollies.data.WorldClientData;
 import bt7s7k7.picker_dollies.network.MovementCommand;
 import bt7s7k7.picker_dollies.network.SelectionContentRequest;
-import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.network.chat.Component;
@@ -42,17 +40,6 @@ public class MovementOperation implements ActiveOperation {
 	@Override
 	public int getColor() {
 		return 0xffffff00;
-	}
-
-	@Override
-	public Stream<Component> getHelpMessage() {
-		return Stream.concat(Stream.of(Component.translatable("gui.picker_dollies.move_state",
-				Component.literal("" + this.destination.offset.getX()).withStyle(ChatFormatting.GOLD),
-				Component.literal("" + this.destination.offset.getY()).withStyle(ChatFormatting.GOLD),
-				Component.literal("" + this.destination.offset.getZ()).withStyle(ChatFormatting.GOLD),
-				Component.empty().append(this.destination.getMirror().symbol()).withStyle(ChatFormatting.GOLD),
-				Component.literal(this.destination.getRotationAngle()).withStyle(ChatFormatting.GOLD)).withStyle(ChatFormatting.YELLOW)),
-				ClientInputEvents.baseOperationHelp());
 	}
 
 	@Override
