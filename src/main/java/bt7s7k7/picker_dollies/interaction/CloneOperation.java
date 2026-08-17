@@ -13,16 +13,16 @@ import net.minecraft.core.Vec3i;
 import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.network.PacketDistributor;
 
-public class MovementOperation implements ActiveOperation {
+public class CloneOperation implements ActiveOperation {
 	public Selection source;
 	public DestinationArea destination;
 
-	public MovementOperation(Selection source, DestinationArea destination) {
+	public CloneOperation(Selection source, DestinationArea destination) {
 		this.source = source;
 		this.destination = destination;
 	}
 
-	public MovementOperation(Selection source) {
+	public CloneOperation(Selection source) {
 		this.source = source;
 		this.destination = DestinationArea.from(source);
 	}
@@ -39,7 +39,7 @@ public class MovementOperation implements ActiveOperation {
 
 	@Override
 	public int getColor() {
-		return 0xffffff00;
+		return 0xff00ff00;
 	}
 
 	@Override
@@ -73,7 +73,7 @@ public class MovementOperation implements ActiveOperation {
 		@Override
 		public ActiveOperation activate() {
 			var data = WorldClientData.getInstance();
-			var operation = new MovementOperation(data.selection);
+			var operation = new CloneOperation(data.selection);
 			data.activeOperation = operation;
 
 			// Reset the structure to remove potentially stale data that would be displayed until we get a response from the server
@@ -85,7 +85,7 @@ public class MovementOperation implements ActiveOperation {
 
 		@Override
 		public Component getName() {
-			return Component.translatable("operation.picker_dollies.move");
+			return Component.translatable("operation.picker_dollies.clone");
 		}
 	};
 }

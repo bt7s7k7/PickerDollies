@@ -150,7 +150,7 @@ public class SelectionRenderer {
 		outline.addVertex(v3.set(pose.transformPosition(v3d.set(minX, minY, maxZ)))).setColor(color);
 
 		var time = (double) (System.nanoTime() / 1000) / 1000.0;
-		color = FastColor.ARGB32.color(Mth.floor((0.1f + 0.15f * (float) (Math.sin(time / 500) * 0.5 + 0.5) * 255)), color);
+		color = FastColor.ARGB32.color(Mth.floor((0.1f + 0.15f * (float) (Math.sin(time / 500) * 0.5 + 0.5)) * 255.0), color);
 
 		// Render both a box and an inside out version, so the faces are visible from the inside.
 		// This allows the player to see block intersections with the outer walls and also makes the

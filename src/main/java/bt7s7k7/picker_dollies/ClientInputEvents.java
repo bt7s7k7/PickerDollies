@@ -1,6 +1,5 @@
 package bt7s7k7.picker_dollies;
 
-import java.util.List;
 import java.util.stream.Stream;
 
 import org.joml.Matrix4d;
@@ -8,8 +7,9 @@ import org.joml.Vector3d;
 
 import com.mojang.blaze3d.platform.InputConstants;
 
+import bt7s7k7.picker_dollies.data.SharedClientData;
 import bt7s7k7.picker_dollies.data.WorldClientData;
-import bt7s7k7.picker_dollies.interaction.MovementOperation;
+import bt7s7k7.picker_dollies.interaction.OperationActivator;
 import dev.ryanhcode.sable.companion.SableCompanion;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -17,12 +17,14 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.ICancellableEvent;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.InputEvent;
@@ -81,14 +83,40 @@ public class ClientInputEvents {
 		});
 	}
 
-	public static final List<Component> START_SELECTION_HELP = List.of(
-			Component.literal("Press ").withStyle(ChatFormatting.GRAY).append(Component.literal("[Left Click]").withStyle(ChatFormatting.WHITE)).append(Component.literal(" to start selection").withStyle(ChatFormatting.GRAY)));
-	public static final List<Component> BASE_SELECTION_HELP = List.<Component>of(
-			Component.literal("Press ").withStyle(ChatFormatting.GRAY).append(Component.literal("[Left Click]").withStyle(ChatFormatting.WHITE)).append(Component.literal(" to expand selection").withStyle(ChatFormatting.GRAY)),
-			Component.literal("Press ").withStyle(ChatFormatting.GRAY).append(Component.literal("[Right Click]").withStyle(ChatFormatting.WHITE)).append(Component.literal(" to clear selection").withStyle(ChatFormatting.GRAY)));
-	public static final List<Component> BASE_OPERATION_HELP = List.<Component>of(
-			Component.literal("Press ").withStyle(ChatFormatting.GRAY).append(Component.literal("[Left Click]").withStyle(ChatFormatting.WHITE)).append(Component.literal(" to apply").withStyle(ChatFormatting.GRAY)),
-			Component.literal("Press ").withStyle(ChatFormatting.GRAY).append(Component.literal("[Right Click]").withStyle(ChatFormatting.WHITE)).append(Component.literal(" to cancel").withStyle(ChatFormatting.GRAY)));
+	public static final Stream<Component> startSelectionHelp() {
+		return Stream.of(Component.translatable("gui.picker_dollies.start_selection", Component.literal("[").withStyle(ChatFormatting.WHITE)
+				.append(Component.keybind(PickerDolliesClient.CONFIRM_OPERATION.get().getName()))
+				.append(Component.literal("]"))).withStyle(ChatFormatting.GRAY));
+	}
+
+	public static final Stream<Component> baseSelectionHelp() {
+		return Stream.of(
+				Component.translatable("gui.picker_dollies.expand_selection", Component.literal("[").withStyle(ChatFormatting.WHITE)
+						.append(Component.keybind(PickerDolliesClient.CONFIRM_OPERATION.get().getName()))
+						.append(Component.literal("]"))).withStyle(ChatFormatting.GRAY),
+				Component.translatable("gui.picker_dollies.clear_selection", Component.literal("[").withStyle(ChatFormatting.WHITE)
+						.append(Component.keybind(PickerDolliesClient.CANCEL_OPERATION.get().getName()))
+						.append(Component.literal("]"))).withStyle(ChatFormatting.GRAY),
+				Component.translatable("gui.picker_dollies.new_selection", Component.literal("[").withStyle(ChatFormatting.WHITE)
+						.append(Component.keybind(PickerDolliesClient.MISC_OPERATION_ACTION.get().getName()))
+						.append(Component.literal("]"))).withStyle(ChatFormatting.GRAY),
+				Component.translatable("gui.picker_dollies.start_operation",
+						Component.empty().append(SharedClientData.getSelectedOperation().getName()).withStyle(ChatFormatting.GOLD),
+						Component.literal("[").withStyle(ChatFormatting.WHITE)
+								.append(Component.keybind(PickerDolliesClient.SELECT_OPERATION.get().getName()))
+								.append(Component.literal("]")))
+						.withStyle(ChatFormatting.GREEN));
+	}
+
+	public static final Stream<Component> baseOperationHelp() {
+		return Stream.of(
+				Component.translatable("gui.picker_dollies.apply_operation", Component.literal("[").withStyle(ChatFormatting.WHITE)
+						.append(Component.keybind(PickerDolliesClient.CONFIRM_OPERATION.get().getName()))
+						.append(Component.literal("]"))).withStyle(ChatFormatting.GRAY),
+				Component.translatable("gui.picker_dollies.cancel_operation", Component.literal("[").withStyle(ChatFormatting.WHITE)
+						.append(Component.keybind(PickerDolliesClient.CANCEL_OPERATION.get().getName()))
+						.append(Component.literal("]"))).withStyle(ChatFormatting.GRAY));
+	}
 
 	private static Stream<Component> getHelpMessage() {
 		var activeOperation = WorldClientData.getInstance().activeOperation;
@@ -104,26 +132,39 @@ public class ClientInputEvents {
 		if (player == null) return null;
 		if (!hasActivator(player)) return null;
 
+		if (PickerDolliesClient.SELECT_OPERATION.get().isDown()) {
+			var selected = SharedClientData.getSelectedOperation();
+			return Stream.concat(
+					Stream.of(Component.translatable("gui.picker_dollies.select_operation_header").withStyle(Style.EMPTY.withBold(true).withColor(ChatFormatting.GOLD))),
+					Stream.concat(
+							SharedClientData.OPERATIONS.stream()
+									.filter(OperationActivator::canActivate)
+									.map(activator -> activator == selected
+											? Component.literal("[").append(Component.empty().append(activator.getName()).withStyle(ChatFormatting.GREEN)).append(Component.literal("]"))
+											: activator.getName()),
+							Stream.of(Component.translatable("gui.picker_dollies.select_operation_footer").withStyle(ChatFormatting.GRAY))));
+		}
+
 		var selection = WorldClientData.getInstance().selection;
 		if (!selection.isActive()) {
-			return START_SELECTION_HELP.stream();
+			return startSelectionHelp();
 		} else {
 			var sizeX = selection.getBounds().getXSpan();
 			var sizeY = selection.getBounds().getYSpan();
 			var sizeZ = selection.getBounds().getZSpan();
 
 			if (sizeX + sizeY + sizeZ == 3) {
-				return BASE_SELECTION_HELP.stream();
+				return baseSelectionHelp();
 			} else {
 				if (!selection.isWithinLimits()) {
-					return Stream.concat(Stream.of(Component.literal("Selection too large (Max: " + Config.MAX_BLOCKS.getAsInt() + ")").withStyle(ChatFormatting.RED)), BASE_SELECTION_HELP.stream());
+					return Stream.concat(Stream.of(Component.translatable("gui.picker_dollies.selection_too_large", Component.literal("" + Config.MAX_BLOCKS.getAsInt())).withStyle(ChatFormatting.RED)), baseSelectionHelp());
 				}
 
-				return Stream.concat(Stream.of(Component.literal("Selection: [").withStyle(ChatFormatting.AQUA)
-						.append(Component.literal("" + sizeX).withStyle(ChatFormatting.GOLD)).append(Component.literal(", "))
-						.append(Component.literal("" + sizeY).withStyle(ChatFormatting.GOLD)).append(Component.literal(", "))
-						.append(Component.literal("" + sizeZ).withStyle(ChatFormatting.GOLD)).append(Component.literal("]"))),
-						BASE_SELECTION_HELP.stream());
+				return Stream.concat(Stream.of(Component.translatable("gui.picker_dollies.selection",
+						Component.literal("" + sizeX).withStyle(ChatFormatting.GOLD),
+						Component.literal("" + sizeY).withStyle(ChatFormatting.GOLD),
+						Component.literal("" + sizeZ).withStyle(ChatFormatting.GOLD)).withStyle(ChatFormatting.AQUA)),
+						baseSelectionHelp());
 			}
 		}
 	}
@@ -146,9 +187,16 @@ public class ClientInputEvents {
 		var selection = WorldClientData.getInstance().selection;
 		var activeOperation = WorldClientData.getInstance().activeOperation;
 
+		if (activeOperation == null && PickerDolliesClient.SELECT_OPERATION.get().isDown()) {
+			if (scrollDelta < 0.0) SharedClientData.selectPreviousOperation();
+			if (scrollDelta > 0.0) SharedClientData.selectNextOperation();
+			event.setCanceled(true);
+			return;
+		}
+
 		// If there is no active operation, but we have a selection, activate an operation
 		if (selection.isActive() && selection.isWithinLimits() && activeOperation == null) {
-			activeOperation = MovementOperation.activate();
+			activeOperation = SharedClientData.getSelectedOperation().activate();
 		}
 
 		if (activeOperation == null) return;
@@ -170,8 +218,9 @@ public class ClientInputEvents {
 		event.setCanceled(true);
 	}
 
-	@SubscribeEvent
-	public static void onMouseButton(InputEvent.MouseButton.Pre event) {
+	public static void handleInput(int action, InputConstants.Key key, ICancellableEvent event) {
+		if (action != InputConstants.PRESS) return;
+
 		var mc = Minecraft.getInstance();
 		if (mc.screen != null) return;
 		var player = mc.player;
@@ -182,48 +231,53 @@ public class ClientInputEvents {
 		var activeOperation = WorldClientData.getInstance().activeOperation;
 		if (!hasActivator(player)) return;
 
-		if (event.getAction() == InputConstants.PRESS) {
-			if (event.getButton() == InputConstants.MOUSE_BUTTON_LEFT) {
-				event.setCanceled(true);
+		if (PickerDolliesClient.CONFIRM_OPERATION.get().isActiveAndMatches(key)) {
+			if (event != null) event.setCanceled(true);
 
-				if (activeOperation != null) {
-					activeOperation.apply();
-					return;
-				}
-
-				var target = getTargetedBlock(player);
-				if (target == null) return;
-				player.displayClientMessage(Component.literal("Expanded selection"), true);
-				WorldClientData.getInstance().selection.expand(target);
+			if (activeOperation != null) {
+				activeOperation.apply();
+				return;
 			}
 
-			if (event.getButton() == InputConstants.MOUSE_BUTTON_RIGHT) {
-				event.setCanceled(true);
-
-				if (activeOperation != null) {
-					activeOperation.cancel();
-					return;
-				}
-
-				var target = getTargetedBlock(player);
-				if (target == null) return;
-				player.displayClientMessage(Component.literal("Clearer selection"), true);
-				WorldClientData.getInstance().selection.clear();
-			}
-
-			if (event.getButton() == InputConstants.MOUSE_BUTTON_MIDDLE) {
-				event.setCanceled(true);
-
-				if (activeOperation != null) {
-					return;
-				}
-
-				var target = getTargetedBlock(player);
-				if (target == null) return;
-				player.displayClientMessage(Component.literal("Reset selection"), true);
-				WorldClientData.getInstance().selection.reset(target);
-			}
+			var target = getTargetedBlock(player);
+			if (target == null) return;
+			WorldClientData.getInstance().selection.expand(target);
 		}
+
+		if (PickerDolliesClient.CANCEL_OPERATION.get().isActiveAndMatches(key)) {
+			if (event != null) event.setCanceled(true);
+
+			if (activeOperation != null) {
+				activeOperation.cancel();
+				return;
+			}
+
+			var target = getTargetedBlock(player);
+			if (target == null) return;
+			WorldClientData.getInstance().selection.clear();
+		}
+
+		if (PickerDolliesClient.MISC_OPERATION_ACTION.get().isActiveAndMatches(key)) {
+			if (event != null) event.setCanceled(true);
+
+			if (activeOperation != null) {
+				return;
+			}
+
+			var target = getTargetedBlock(player);
+			if (target == null) return;
+			WorldClientData.getInstance().selection.reset(target);
+		}
+	}
+
+	@SubscribeEvent
+	public static void onMouseButton(InputEvent.MouseButton.Pre event) {
+		handleInput(event.getAction(), InputConstants.Type.MOUSE.getOrCreate(event.getButton()), event);
+	}
+
+	@SubscribeEvent
+	public static void onKeyboardEvent(InputEvent.Key event) {
+		handleInput(event.getAction(), InputConstants.getKey(event.getKey(), event.getScanCode()), null);
 	}
 
 	public static boolean hasActivator(Player player) {
