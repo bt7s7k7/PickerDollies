@@ -14,6 +14,31 @@ import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.neoforged.neoforge.server.ServerLifecycleHooks;
 
 public interface Area {
+	public static class Simple implements Area {
+		protected ResourceKey<Level> dimension;
+		protected BoundingBox bounds;
+
+		@Override
+		public ResourceKey<Level> getDimension() {
+			return this.dimension;
+		}
+
+		@Override
+		public BoundingBox getBounds() {
+			return this.bounds;
+		}
+
+		public Simple(ResourceKey<Level> dimension, BoundingBox bounds) {
+			this.dimension = dimension;
+			this.bounds = bounds;
+		}
+
+		public Simple(Area area) {
+			this.dimension = area.getDimension();
+			this.bounds = area.getBounds();
+		}
+	}
+
 	public ResourceKey<Level> getDimension();
 
 	public BoundingBox getBounds();

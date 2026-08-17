@@ -11,6 +11,7 @@ import bt7s7k7.picker_dollies.PickerDollies;
 import bt7s7k7.picker_dollies.interaction.CloneOperation;
 import bt7s7k7.picker_dollies.interaction.MovementOperation;
 import bt7s7k7.picker_dollies.interaction.OperationActivator;
+import bt7s7k7.picker_dollies.interaction.StackOperation;
 import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
@@ -71,7 +72,8 @@ public class SharedClientData {
 
 	public static final List<OperationActivator> OPERATIONS = List.of(
 			MovementOperation.ACTIVATOR,
-			CloneOperation.ACTIVATOR);
+			CloneOperation.ACTIVATOR,
+			StackOperation.ACTIVATOR);
 	private static int selectedOperationIdx = 0;
 
 	public static void selectNextOperation() {

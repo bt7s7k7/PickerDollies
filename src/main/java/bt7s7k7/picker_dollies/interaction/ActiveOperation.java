@@ -3,6 +3,7 @@ package bt7s7k7.picker_dollies.interaction;
 import java.util.stream.Stream;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.network.chat.Component;
@@ -22,7 +23,7 @@ public interface ActiveOperation {
 
 	public void cancel();
 
-	public void move(Vec3i offset);
+	public void move(Vec3i offset, Direction direction, int amount);
 
 	public void moveTo(GlobalPos globalPos);
 

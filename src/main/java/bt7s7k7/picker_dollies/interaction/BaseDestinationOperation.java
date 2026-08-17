@@ -5,6 +5,7 @@ import java.util.stream.Stream;
 import bt7s7k7.picker_dollies.ClientInputEvents;
 import bt7s7k7.picker_dollies.data.WorldClientData;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.network.chat.Component;
@@ -61,7 +62,7 @@ public abstract class BaseDestinationOperation implements ActiveOperation {
 	}
 
 	@Override
-	public void move(Vec3i offset) {
+	public void move(Vec3i offset, Direction direction, int amount) {
 		this.destination.applyOffset(offset);
 	}
 

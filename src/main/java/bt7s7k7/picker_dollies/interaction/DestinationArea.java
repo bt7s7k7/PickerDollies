@@ -44,6 +44,13 @@ public class DestinationArea implements Area {
 		this.bounds = boundingBox;
 	}
 
+	public void setPos(BlockPos pos) {
+		var size = this.getUntransformedArea().getSize();
+		this.bounds = new BoundingBox(
+				pos.getX(), pos.getY(), pos.getZ(),
+				pos.getX() + size.getX(), pos.getY() + size.getY(), pos.getZ() + size.getZ());
+	}
+
 	@Override
 	public ResourceKey<Level> getDimension() {
 		return this.dimension;

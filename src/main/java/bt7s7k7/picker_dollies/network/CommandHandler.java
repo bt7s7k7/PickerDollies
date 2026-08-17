@@ -76,6 +76,22 @@ public class CommandHandler {
 			destination.applyStructure(structure, !ctx.player().isCreative());
 		});
 
+		registrar.commonToServer(StampManyCommand.TYPE, StampManyCommand.STREAM_CODEC, (payload, ctx) -> {
+			var structure = ServerPlayerData.of(ctx.player()).structure;
+			if (structure == null) {
+				PickerDollies.LOGGER.error("Client tried ot execute StampManyCommand without a server-side structure");
+				return;
+			}
+
+			var destination = payload.to();
+			var positions = payload.positions();
+
+			for (var position : positions) {
+				destination.setPos(position);
+				destination.applyStructure(structure, !ctx.player().isCreative());
+			}
+		});
+
 		registrar.commonToServer(CutCommand.TYPE, CutCommand.STREAM_CODEC, (payload, ctx) -> {
 			var selection = payload.from();
 

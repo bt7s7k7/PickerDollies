@@ -238,8 +238,8 @@ public class ClientInputEvents {
 		var activeOperation = WorldClientData.getInstance().activeOperation;
 
 		if (activeOperation == null && PickerDolliesClient.ALTERNATE_INPUT.get().isDown()) {
-			if (scrollDelta < 0.0) SharedClientData.selectPreviousOperation();
-			if (scrollDelta > 0.0) SharedClientData.selectNextOperation();
+			if (scrollDelta > 0.0) SharedClientData.selectPreviousOperation();
+			if (scrollDelta < 0.0) SharedClientData.selectNextOperation();
 			event.setCanceled(true);
 			return;
 		}
@@ -255,7 +255,7 @@ public class ClientInputEvents {
 
 		var direction = getPlayerDirection(scrollDelta, destination);
 		var offset = direction.getNormal();
-		activeOperation.move(offset);
+		activeOperation.move(offset, scrollDelta > 0.0 ? direction : direction.getOpposite(), scrollDelta > 0.0 ? 1 : -1);
 		event.setCanceled(true);
 	}
 
