@@ -5,6 +5,7 @@ import java.util.List;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
+import bt7s7k7.picker_dollies.Config;
 import bt7s7k7.picker_dollies.PickerDollies;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.core.BlockPos;
@@ -21,17 +22,19 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 
-public class Selection implements Area {
+public class Selection implements Area, Cloneable {
 	protected ResourceKey<Level> dimension = null;
 	protected BoundingBox bounds = null;
 
 	@Override
 	public ResourceKey<Level> getDimension() {
+		if (this.dimension == null) throw new NullPointerException("Tried to get dimension of an inactive Selection");
 		return this.dimension;
 	}
 
 	@Override
 	public BoundingBox getBounds() {
+		if (this.bounds == null) throw new NullPointerException("Tried to get bounds of an inactive Selection");
 		return this.bounds;
 	}
 
@@ -74,6 +77,15 @@ public class Selection implements Area {
 
 		this.bounds = BoundingBox.encapsulatingBoxes(List.of(this.bounds, new BoundingBox(position.pos()))).get();
 		return this;
+	}
+
+	@Override
+	public Selection clone() {
+		try {
+			return (Selection) super.clone();
+		} catch (CloneNotSupportedException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	@Override

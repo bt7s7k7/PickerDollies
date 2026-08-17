@@ -56,7 +56,7 @@ public class MovementOperation implements ActiveOperation {
 
 	@Override
 	public void apply() {
-		PacketDistributor.sendToServer(new MovementCommand(this.source, this.destination));
+		PacketDistributor.sendToServer(new MovementCommand(this.source.clone(), this.destination));
 		var data = WorldClientData.getInstance();
 		data.activeOperation = null;
 		data.selection.clear();
