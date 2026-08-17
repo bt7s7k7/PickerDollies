@@ -26,6 +26,10 @@ public class Config {
 			.comment("Determines if a preview for an operation result should be displayed, for example for a move operation this will be the blocks that will be placed. This feature is not super optimised, so disable this if you get frame drops.")
 			.define("shouldRenderPreview", true);
 
+	public static final ModConfigSpec.BooleanValue DISPLAY_DIRECTION_INDICATOR = CLIENT_BUILDER
+			.comment("When using the wand, displays an indicator next to your crosshair that shows which in axis the active area will move when scrolling.")
+			.define("displayDirectionIndicator", true);
+
 	static final ModConfigSpec CLIENT_SPEC = CLIENT_BUILDER.build();
 
 	public static void register(ModContainer modContainer) {

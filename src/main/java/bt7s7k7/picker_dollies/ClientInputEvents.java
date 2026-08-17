@@ -74,11 +74,29 @@ public class ClientInputEvents {
 			guiGraphics.pose().translate((float) (guiGraphics.guiWidth() / 2), (float) (guiGraphics.guiHeight() / 2), 0.0F);
 			int baseColor = 0xffffffff;
 
+			var data = WorldClientData.getInstance();
+			var area = (Area) null;
+			if (data.activeOperation != null) {
+				area = data.activeOperation.getDestination();
+			} else if (data.selection.isActive()) {
+				area = data.selection;
+			}
+
+			if (Config.DISPLAY_DIRECTION_INDICATOR.getAsBoolean()) {
+				var direction = getPlayerDirection(baseColor, area);
+				var axis = switch (direction.getAxis()) {
+					case X -> Component.literal("X").withStyle(ChatFormatting.RED);
+					case Y -> Component.literal("Y").withStyle(ChatFormatting.GREEN);
+					case Z -> Component.literal("Z").withStyle(ChatFormatting.BLUE);
+				};
+
+				guiGraphics.drawCenteredString(font, axis, -16, -font.lineHeight / 2, 0xaaffffff);
+			}
+
 			var y = 8 + font.lineHeight;
 
 			for (var line : Support.getIterable(helpMessage::iterator)) {
-				int width = font.width(line);
-				guiGraphics.drawStringWithBackdrop(font, line, -width / 2, y, width, baseColor);
+				guiGraphics.drawCenteredString(font, line, 0, y, baseColor);
 				y += font.lineHeight;
 			}
 
@@ -215,14 +233,18 @@ public class ClientInputEvents {
 	public static Direction getPlayerDirection(double mul, Area area) {
 		var mc = Minecraft.getInstance();
 		var player = mc.player;
-		var level = player.level();
-		var position = area.getPos();
-		var sublevel = SableCompanion.INSTANCE.getContaining(level, position);
-
 		var forward = player.getForward().scale(mul);
-		if (sublevel != null) {
-			var newForward = sublevel.logicalPose().bakeIntoMatrix(new Matrix4d()).invert().transformDirection(new Vector3d(forward.x, forward.y, forward.z));
-			forward = new Vec3(newForward.x, newForward.y, newForward.z);
+
+		if (area != null) {
+			var level = player.level();
+
+			var position = area.getPos();
+			var sublevel = SableCompanion.INSTANCE.getContaining(level, position);
+
+			if (sublevel != null) {
+				var newForward = sublevel.logicalPose().bakeIntoMatrix(new Matrix4d()).invert().transformDirection(new Vector3d(forward.x, forward.y, forward.z));
+				forward = new Vec3(newForward.x, newForward.y, newForward.z);
+			}
 		}
 
 		var direction = Direction.getNearest(forward);
