@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import com.mojang.logging.LogUtils;
 
 import bt7s7k7.picker_dollies.data.SharedClientData;
+import bt7s7k7.picker_dollies.extra.CreativeFlightNoclip;
 import bt7s7k7.picker_dollies.network.CommandHandler;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.Commands;
@@ -29,7 +30,9 @@ public class PickerDollies {
 	// FML will recognize some parameter types like IEventBus or ModContainer and pass them in automatically.
 	public PickerDollies(IEventBus modEventBus, ModContainer modContainer) {
 		Config.register(modContainer);
+
 		CommandHandler.register();
+		CreativeFlightNoclip.register();
 	}
 
 	@SubscribeEvent

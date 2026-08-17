@@ -52,4 +52,15 @@ public final class Support {
 			throw new RuntimeException(exception);
 		}
 	}
+
+	public static void setField(Object object, String fieldName, Class<?> sourceClass, Object value) {
+		try {
+			var field = sourceClass.getDeclaredField(fieldName);
+			field.setAccessible(true);
+
+			field.set(object, value);
+		} catch (NoSuchFieldException | SecurityException | IllegalAccessException exception) {
+			throw new RuntimeException(exception);
+		}
+	}
 }

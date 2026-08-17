@@ -18,6 +18,10 @@ public class Config {
 			.comment("Disables all operations, which allow the player to duplicate materials, for players in survival mode. This includes pasting from the clipboard, instead the cut operation will drop items.")
 			.define("disableFreeOperationsInSurvival", false);
 
+	public static final ModConfigSpec.BooleanValue CREATIVE_FLIGHT_NOCLIP = SERVER_BUILDER
+			.comment("EXPERIMENTAL: Allows creative players to phase thought blocks during flight as if they were in spectator.")
+			.define("creativeFlightNoclip", false);
+
 	static final ModConfigSpec SERVER_SPEC = SERVER_BUILDER.build();
 
 	private static final ModConfigSpec.Builder CLIENT_BUILDER = new ModConfigSpec.Builder();
