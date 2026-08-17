@@ -1,10 +1,16 @@
 package bt7s7k7.picker_dollies.interaction;
 
+import org.joml.Matrix4d;
+import org.joml.Vector3d;
+import org.joml.Vector3f;
+
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import bt7s7k7.picker_dollies.PickerDollies;
 import bt7s7k7.picker_dollies.Support;
 import bt7s7k7.picker_dollies.data.WorldClientData;
+import dev.ryanhcode.sable.companion.SableCompanion;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -12,6 +18,7 @@ import net.minecraft.client.renderer.RenderBuffers;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.debug.DebugRenderer;
 import net.minecraft.util.FastColor;
+import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -42,57 +49,107 @@ public class SelectionRenderer implements DebugRenderer.SimpleDebugRenderer {
 		if (player == null) return;
 		if (area.getDimension() != player.level().dimension()) return;
 
-		var outline = bufferSource.getBuffer(RenderType.debugLineStrip(1.0));
+		var pose = new Matrix4d();
+		pose.translate(new Vector3d(-camX, -camY, -camZ));
+
 		var boundingBox = area.getBounds();
-		var minX = (float) (boundingBox.minX() - inflate - camX);
-		var minY = (float) (boundingBox.minY() - inflate - camY);
-		var minZ = (float) (boundingBox.minZ() - inflate - camZ);
-		var maxX = (float) (boundingBox.maxX() + 1.0 + inflate - camX);
-		var maxY = (float) (boundingBox.maxY() + 1.0 + inflate - camY);
-		var maxZ = (float) (boundingBox.maxZ() + 1.0 + inflate - camZ);
+		var minX = boundingBox.minX() - inflate;
+		var minY = boundingBox.minY() - inflate;
+		var minZ = boundingBox.minZ() - inflate;
+		var maxX = boundingBox.maxX() + 1.0 + inflate;
+		var maxY = boundingBox.maxY() + 1.0 + inflate;
+		var maxZ = boundingBox.maxZ() + 1.0 + inflate;
 
-		var pose = poseStack.last().pose();
+		var level = player.level();
+		var sublevel = SableCompanion.INSTANCE.getContaining(level, area.getPos());
+		if (sublevel != null) {
+			var posed = sublevel.logicalPose().bakeIntoMatrix(new Matrix4d());
+			pose.mul(posed);
+		}
 
-		outline.addVertex(pose, minX, minY, minZ).setColor(color);
-		outline.addVertex(pose, maxX, minY, minZ).setColor(color);
-		outline.addVertex(pose, maxX, maxY, minZ).setColor(color);
-		outline.addVertex(pose, minX, maxY, minZ).setColor(color);
-		outline.addVertex(pose, minX, minY, minZ).setColor(color);
+		var outline = bufferSource.getBuffer(RenderType.debugLineStrip(1.0));
 
-		outline.addVertex(pose, minX, minY, maxZ).setColor(color);
+		var v3 = new Vector3f();
+		var v3d = new Vector3d();
 
-		outline.addVertex(pose, maxX, minY, maxZ).setColor(color);
-		outline.addVertex(pose, maxX, minY, minZ).setColor(color);
-		outline.addVertex(pose, maxX, minY, maxZ).setColor(color);
+		outline.addVertex(v3.set(pose.transformPosition(v3d.set(minX, minY, minZ)))).setColor(color);
+		outline.addVertex(v3.set(pose.transformPosition(v3d.set(maxX, minY, minZ)))).setColor(color);
+		outline.addVertex(v3.set(pose.transformPosition(v3d.set(maxX, maxY, minZ)))).setColor(color);
+		outline.addVertex(v3.set(pose.transformPosition(v3d.set(minX, maxY, minZ)))).setColor(color);
+		outline.addVertex(v3.set(pose.transformPosition(v3d.set(minX, minY, minZ)))).setColor(color);
 
-		outline.addVertex(pose, maxX, maxY, maxZ).setColor(color);
-		outline.addVertex(pose, maxX, maxY, minZ).setColor(color);
-		outline.addVertex(pose, maxX, maxY, maxZ).setColor(color);
+		outline.addVertex(v3.set(pose.transformPosition(v3d.set(minX, minY, maxZ)))).setColor(color);
 
-		outline.addVertex(pose, minX, maxY, maxZ).setColor(color);
-		outline.addVertex(pose, minX, maxY, minZ).setColor(color);
-		outline.addVertex(pose, minX, maxY, maxZ).setColor(color);
+		outline.addVertex(v3.set(pose.transformPosition(v3d.set(maxX, minY, maxZ)))).setColor(color);
+		outline.addVertex(v3.set(pose.transformPosition(v3d.set(maxX, minY, minZ)))).setColor(color);
+		outline.addVertex(v3.set(pose.transformPosition(v3d.set(maxX, minY, maxZ)))).setColor(color);
 
-		outline.addVertex(pose, minX, minY, maxZ).setColor(color);
+		outline.addVertex(v3.set(pose.transformPosition(v3d.set(maxX, maxY, maxZ)))).setColor(color);
+		outline.addVertex(v3.set(pose.transformPosition(v3d.set(maxX, maxY, minZ)))).setColor(color);
+		outline.addVertex(v3.set(pose.transformPosition(v3d.set(maxX, maxY, maxZ)))).setColor(color);
+
+		outline.addVertex(v3.set(pose.transformPosition(v3d.set(minX, maxY, maxZ)))).setColor(color);
+		outline.addVertex(v3.set(pose.transformPosition(v3d.set(minX, maxY, minZ)))).setColor(color);
+		outline.addVertex(v3.set(pose.transformPosition(v3d.set(minX, maxY, maxZ)))).setColor(color);
+
+		outline.addVertex(v3.set(pose.transformPosition(v3d.set(minX, minY, maxZ)))).setColor(color);
 
 		var time = (double) (System.nanoTime() / 1000) / 1000.0;
-
-		var r = FastColor.ARGB32.red(color) / 255.0f;
-		var g = FastColor.ARGB32.green(color) / 255.0f;
-		var b = FastColor.ARGB32.blue(color) / 255.0f;
-		var a = 0.1f + 0.15f * (float) (Math.sin(time / 500) * 0.5 + 0.5);
+		color = FastColor.ARGB32.color(Mth.floor((0.1f + 0.15f * (float) (Math.sin(time / 500) * 0.5 + 0.5) * 255)), color);
 
 		// Render both a box and an inside out version, so the faces are visible from the inside.
 		// This allows the player to see block intersections with the outer walls and also makes the
 		// box visible from the inside.
-		DebugRenderer.renderFilledBox(poseStack, bufferSource,
+		var filledBox = bufferSource.getBuffer(RenderType.debugFilledBox());
+		renderFilledBox(pose, filledBox,
 				maxX, maxY, maxZ,
 				minX, minY, minZ,
-				r, g, b, a);
-		DebugRenderer.renderFilledBox(poseStack, bufferSource,
+				color);
+		renderFilledBox(pose, filledBox,
 				minX, minY, minZ,
 				maxX, maxY, maxZ,
-				r, g, b, a);
+				color);
+	}
+
+	// Custom copy of DebugRenderer.renderFilledBox with support for double precision pose and points.
+	private static void renderFilledBox(
+			Matrix4d pose, VertexConsumer consumer,
+			double minX, double minY, double minZ,
+			double maxX, double maxY, double maxZ,
+			int color) {
+
+		var v3 = new Vector3f();
+		var v3d = new Vector3d();
+		consumer.addVertex(v3.set(pose.transformPosition(v3d.set(minX, minY, minZ)))).setColor(color);
+		consumer.addVertex(v3.set(pose.transformPosition(v3d.set(minX, minY, minZ)))).setColor(color);
+		consumer.addVertex(v3.set(pose.transformPosition(v3d.set(minX, minY, minZ)))).setColor(color);
+		consumer.addVertex(v3.set(pose.transformPosition(v3d.set(minX, minY, maxZ)))).setColor(color);
+		consumer.addVertex(v3.set(pose.transformPosition(v3d.set(minX, maxY, minZ)))).setColor(color);
+		consumer.addVertex(v3.set(pose.transformPosition(v3d.set(minX, maxY, maxZ)))).setColor(color);
+		consumer.addVertex(v3.set(pose.transformPosition(v3d.set(minX, maxY, maxZ)))).setColor(color);
+		consumer.addVertex(v3.set(pose.transformPosition(v3d.set(minX, minY, maxZ)))).setColor(color);
+		consumer.addVertex(v3.set(pose.transformPosition(v3d.set(maxX, maxY, maxZ)))).setColor(color);
+		consumer.addVertex(v3.set(pose.transformPosition(v3d.set(maxX, minY, maxZ)))).setColor(color);
+		consumer.addVertex(v3.set(pose.transformPosition(v3d.set(maxX, minY, maxZ)))).setColor(color);
+		consumer.addVertex(v3.set(pose.transformPosition(v3d.set(maxX, minY, minZ)))).setColor(color);
+		consumer.addVertex(v3.set(pose.transformPosition(v3d.set(maxX, maxY, maxZ)))).setColor(color);
+		consumer.addVertex(v3.set(pose.transformPosition(v3d.set(maxX, maxY, minZ)))).setColor(color);
+		consumer.addVertex(v3.set(pose.transformPosition(v3d.set(maxX, maxY, minZ)))).setColor(color);
+		consumer.addVertex(v3.set(pose.transformPosition(v3d.set(maxX, minY, minZ)))).setColor(color);
+		consumer.addVertex(v3.set(pose.transformPosition(v3d.set(minX, maxY, minZ)))).setColor(color);
+		consumer.addVertex(v3.set(pose.transformPosition(v3d.set(minX, minY, minZ)))).setColor(color);
+		consumer.addVertex(v3.set(pose.transformPosition(v3d.set(minX, minY, minZ)))).setColor(color);
+		consumer.addVertex(v3.set(pose.transformPosition(v3d.set(maxX, minY, minZ)))).setColor(color);
+		consumer.addVertex(v3.set(pose.transformPosition(v3d.set(minX, minY, maxZ)))).setColor(color);
+		consumer.addVertex(v3.set(pose.transformPosition(v3d.set(maxX, minY, maxZ)))).setColor(color);
+		consumer.addVertex(v3.set(pose.transformPosition(v3d.set(maxX, minY, maxZ)))).setColor(color);
+		consumer.addVertex(v3.set(pose.transformPosition(v3d.set(minX, maxY, minZ)))).setColor(color);
+		consumer.addVertex(v3.set(pose.transformPosition(v3d.set(minX, maxY, minZ)))).setColor(color);
+		consumer.addVertex(v3.set(pose.transformPosition(v3d.set(minX, maxY, maxZ)))).setColor(color);
+		consumer.addVertex(v3.set(pose.transformPosition(v3d.set(maxX, maxY, minZ)))).setColor(color);
+		consumer.addVertex(v3.set(pose.transformPosition(v3d.set(maxX, maxY, maxZ)))).setColor(color);
+		consumer.addVertex(v3.set(pose.transformPosition(v3d.set(maxX, maxY, maxZ)))).setColor(color);
+		consumer.addVertex(v3.set(pose.transformPosition(v3d.set(maxX, maxY, maxZ)))).setColor(color);
 	}
 
 	@Override

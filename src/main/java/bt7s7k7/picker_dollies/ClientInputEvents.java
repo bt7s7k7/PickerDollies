@@ -3,10 +3,14 @@ package bt7s7k7.picker_dollies;
 import java.util.List;
 import java.util.stream.Stream;
 
+import org.joml.Matrix4d;
+import org.joml.Vector3d;
+
 import com.mojang.blaze3d.platform.InputConstants;
 
 import bt7s7k7.picker_dollies.data.WorldClientData;
 import bt7s7k7.picker_dollies.interaction.MovementOperation;
+import dev.ryanhcode.sable.companion.SableCompanion;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.Direction;
@@ -17,6 +21,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -147,8 +152,18 @@ public class ClientInputEvents {
 		}
 
 		if (activeOperation == null) return;
+		var destination = activeOperation.getDestination();
+		if (destination.getDimension() != player.level().dimension()) return;
+		var level = player.level();
+		var position = destination.getPos();
+		var sublevel = SableCompanion.INSTANCE.getContaining(level, position);
 
 		var forward = player.getForward().scale(scrollDelta);
+		if (sublevel != null) {
+			var newForward = sublevel.logicalPose().bakeIntoMatrix(new Matrix4d()).invert().transformDirection(new Vector3d(forward.x, forward.y, forward.z));
+			forward = new Vec3(newForward.x, newForward.y, newForward.z);
+		}
+
 		var direction = Direction.getNearest(forward);
 		var offset = direction.getNormal();
 		activeOperation.move(offset);
