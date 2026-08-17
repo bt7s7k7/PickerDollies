@@ -1,71 +1,28 @@
 package bt7s7k7.picker_dollies.interaction;
 
-import java.util.stream.Stream;
-
 import bt7s7k7.picker_dollies.data.SharedClientData;
 import bt7s7k7.picker_dollies.data.WorldClientData;
 import bt7s7k7.picker_dollies.network.CopyCommand;
 import bt7s7k7.picker_dollies.network.MovementCommand;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.GlobalPos;
-import net.minecraft.core.Vec3i;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.level.block.Mirror;
-import net.minecraft.world.level.block.Rotation;
 import net.neoforged.neoforge.network.PacketDistributor;
 
-public class MovementOperation implements ActiveOperation {
+public class MovementOperation extends BaseDestinationOperation {
 	public Selection source;
-	public DestinationArea destination;
 
 	public MovementOperation(Selection source, DestinationArea destination) {
+		super(destination);
 		this.source = source;
-		this.destination = destination;
 	}
 
 	public MovementOperation(Selection source) {
+		super(source);
 		this.source = source;
-		this.destination = DestinationArea.from(source);
-	}
-
-	@Override
-	public Stream<BlockPos> getPreviewRenderPositions() {
-		return Stream.of(this.destination.getUntransformedArea().getPos());
-	}
-
-	@Override
-	public DestinationArea getDestination() {
-		return this.destination;
 	}
 
 	@Override
 	public int getColor() {
 		return 0xffffff00;
-	}
-
-	@Override
-	public void cancel() {
-		WorldClientData.getInstance().activeOperation = null;
-	}
-
-	@Override
-	public void move(Vec3i offset) {
-		this.destination.applyOffset(offset);
-	}
-
-	@Override
-	public void moveTo(GlobalPos globalPos) {
-		this.destination.moveTo(globalPos);
-	}
-
-	@Override
-	public void applyMirror(Mirror mirror) {
-		this.destination.applyMirror(mirror);
-	}
-
-	@Override
-	public void applyRotation(Rotation rotation) {
-		this.destination.applyRotation(rotation);
 	}
 
 	@Override

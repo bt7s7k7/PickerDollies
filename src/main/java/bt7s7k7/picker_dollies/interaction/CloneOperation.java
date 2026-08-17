@@ -1,38 +1,19 @@
 package bt7s7k7.picker_dollies.interaction;
 
-import java.util.stream.Stream;
-
 import bt7s7k7.picker_dollies.data.SharedClientData;
 import bt7s7k7.picker_dollies.data.WorldClientData;
 import bt7s7k7.picker_dollies.network.CopyCommand;
 import bt7s7k7.picker_dollies.network.StampCommand;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.GlobalPos;
-import net.minecraft.core.Vec3i;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.level.block.Mirror;
-import net.minecraft.world.level.block.Rotation;
 import net.neoforged.neoforge.network.PacketDistributor;
 
-public class CloneOperation implements ActiveOperation {
-	public DestinationArea destination;
-
+public class CloneOperation extends BaseDestinationOperation {
 	public CloneOperation(DestinationArea destination) {
-		this.destination = destination;
+		super(destination);
 	}
 
 	public CloneOperation(Selection source) {
-		this.destination = DestinationArea.from(source);
-	}
-
-	@Override
-	public Stream<BlockPos> getPreviewRenderPositions() {
-		return Stream.of(this.destination.getUntransformedArea().getPos());
-	}
-
-	@Override
-	public DestinationArea getDestination() {
-		return this.destination;
+		super(source);
 	}
 
 	@Override
@@ -41,33 +22,8 @@ public class CloneOperation implements ActiveOperation {
 	}
 
 	@Override
-	public void cancel() {
-		WorldClientData.getInstance().activeOperation = null;
-	}
-
-	@Override
-	public void move(Vec3i offset) {
-		this.destination.applyOffset(offset);
-	}
-
-	@Override
-	public void moveTo(GlobalPos globalPos) {
-		this.destination.moveTo(globalPos);
-	}
-
-	@Override
 	public void apply() {
 		PacketDistributor.sendToServer(new StampCommand(this.destination));
-	}
-
-	@Override
-	public void applyMirror(Mirror mirror) {
-		this.destination.applyMirror(mirror);
-	}
-
-	@Override
-	public void applyRotation(Rotation rotation) {
-		this.destination.applyRotation(rotation);
 	}
 
 	public static final OperationActivator ACTIVATOR = new OperationActivator() {

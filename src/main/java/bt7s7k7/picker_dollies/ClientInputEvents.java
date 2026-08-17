@@ -10,7 +10,6 @@ import com.mojang.blaze3d.platform.InputConstants;
 
 import bt7s7k7.picker_dollies.data.SharedClientData;
 import bt7s7k7.picker_dollies.data.WorldClientData;
-import bt7s7k7.picker_dollies.interaction.Area;
 import bt7s7k7.picker_dollies.interaction.CloneOperation;
 import bt7s7k7.picker_dollies.interaction.DestinationArea;
 import bt7s7k7.picker_dollies.interaction.OperationActivator;
@@ -87,15 +86,15 @@ public class ClientInputEvents {
 			int baseColor = 0xffffffff;
 
 			var data = WorldClientData.getInstance();
-			var area = (Area) null;
+			var anchor = (GlobalPos) null;
 			if (data.activeOperation != null) {
-				area = data.activeOperation.getDestination();
+				anchor = data.activeOperation.getAnchor();
 			} else if (data.selection.isActive()) {
-				area = data.selection;
+				anchor = new GlobalPos(data.selection.getDimension(), data.selection.getPos());
 			}
 
 			if (Config.DISPLAY_DIRECTION_INDICATOR.getAsBoolean()) {
-				var direction = getPlayerDirection(baseColor, area);
+				var direction = getPlayerDirection(baseColor, anchor);
 				var axis = switch (direction.getAxis()) {
 					case X -> Component.literal("X").withStyle(ChatFormatting.RED);
 					case Y -> Component.literal("Y").withStyle(ChatFormatting.GREEN);
@@ -236,8 +235,8 @@ public class ClientInputEvents {
 		}
 
 		if (activeOperation == null) return;
-		var destination = activeOperation.getDestination();
-		if (destination.getDimension() != player.level().dimension()) return;
+		var destination = activeOperation.getAnchor();
+		if (destination.dimension() != player.level().dimension()) return;
 
 		var direction = getPlayerDirection(scrollDelta, destination);
 		var offset = direction.getNormal();
@@ -245,15 +244,15 @@ public class ClientInputEvents {
 		event.setCanceled(true);
 	}
 
-	public static Direction getPlayerDirection(double mul, Area area) {
+	public static Direction getPlayerDirection(double mul, GlobalPos anchor) {
 		var mc = Minecraft.getInstance();
 		var player = mc.player;
 		var forward = player.getForward().scale(mul);
 
-		if (area != null) {
+		if (anchor != null) {
 			var level = player.level();
 
-			var position = area.getPos();
+			var position = anchor.pos();
 			var sublevel = SableCompanion.INSTANCE.getContaining(level, position);
 
 			if (sublevel != null) {
@@ -348,9 +347,10 @@ public class ClientInputEvents {
 
 			if (event != null) event.setCanceled(true);
 
-			var destination = activeOperation.getDestination();
-			var direction = getPlayerDirection(1.0, destination);
-			var isRotated = destination.getRotation() == Rotation.CLOCKWISE_90 || destination.getRotation() == Rotation.COUNTERCLOCKWISE_90;
+			var anchor = activeOperation.getAnchor();
+			var direction = getPlayerDirection(1.0, anchor);
+			var rotation = activeOperation.getRotation();
+			var isRotated = rotation == Rotation.CLOCKWISE_90 || rotation == Rotation.COUNTERCLOCKWISE_90;
 
 			var mirror = switch (direction) {
 				case DOWN, UP -> null;

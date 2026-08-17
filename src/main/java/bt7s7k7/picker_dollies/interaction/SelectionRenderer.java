@@ -61,28 +61,30 @@ public class SelectionRenderer {
 		var activeOperation = WorldClientData.getInstance().activeOperation;
 		if (activeOperation == null) return;
 
-		var area = activeOperation.getDestination();
 		var mc = Minecraft.getInstance();
 		var player = mc.player;
 		if (player == null) return;
 		var level = player.level();
-		if (area.getDimension() != level.dimension()) return;
-
 		var structure = SharedClientData.getStructure();
 		if (structure == null) return;
 
-		var mirror = area.getMirror();
-		var rotation = area.getRotation();
-		var rawArea = area.getUntransformedArea();
-		var rawSize = rawArea.getSize();
-		var rawPos = rawArea.getPos();
+		for (var previewBox : Support.getIterable(activeOperation.getPreviewRenderPositions()::iterator)) {
+			var area = previewBox.area();
+			if (area.getDimension() != level.dimension()) return;
 
-		@SuppressWarnings("unchecked")
-		var palettes = (List<StructureTemplate.Palette>) Support.getField(structure, "palettes", StructureTemplate.class);
-		if (palettes.size() != 1) throw new IllegalStateException("Structure for SelectionRenderer does not have 1 palette but " + palettes.size());
-		var palette = palettes.getFirst();
+			var renderPosition = previewBox.position();
 
-		for (var renderPosition : Support.getIterable(activeOperation.getPreviewRenderPositions()::iterator)) {
+			var mirror = area.getMirror();
+			var rotation = area.getRotation();
+			var rawArea = area.getUntransformedArea();
+			var rawSize = rawArea.getSize();
+			var rawPos = rawArea.getPos();
+
+			@SuppressWarnings("unchecked")
+			var palettes = (List<StructureTemplate.Palette>) Support.getField(structure, "palettes", StructureTemplate.class);
+			if (palettes.size() != 1) throw new IllegalStateException("Structure for SelectionRenderer does not have 1 palette but " + palettes.size());
+			var palette = palettes.getFirst();
+
 			var pose = getPose(level, rawPos, cameraPosition);
 
 			for (var blockInfo : palette.blocks()) {
@@ -232,9 +234,11 @@ public class SelectionRenderer {
 
 		renderSelectionOutline(poseStack, bufferSource, cameraPosition, selection, selectionColor, 0.01);
 
-		if (data.activeOperation != null) {
-			// Larger inflation for this selection to make the operation area render in // front of the selection
-			renderSelectionOutline(poseStack, bufferSource, cameraPosition, data.activeOperation.getDestination(), data.activeOperation.getColor(), 0.02);
+		if (data.activeOperation == null) return;
+
+		for (var destination : Support.getIterable(data.activeOperation.getDestinationBoxes()::iterator)) {
+			// Larger inflation for this selection to make the operation area render in front of the selection
+			renderSelectionOutline(poseStack, bufferSource, cameraPosition, destination.area(), destination.color(), 0.02);
 		}
 	}
 
