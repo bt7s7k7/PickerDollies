@@ -4,7 +4,7 @@ import java.util.stream.Stream;
 
 import bt7s7k7.picker_dollies.data.SharedClientData;
 import bt7s7k7.picker_dollies.data.WorldClientData;
-import bt7s7k7.picker_dollies.network.SelectionContentRequest;
+import bt7s7k7.picker_dollies.network.CopyCommand;
 import bt7s7k7.picker_dollies.network.StampCommand;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
@@ -27,7 +27,7 @@ public class CloneOperation implements ActiveOperation {
 
 	@Override
 	public Stream<BlockPos> getPreviewRenderPositions() {
-		return Stream.of(this.destination.getPos());
+		return Stream.of(this.destination.getUntransformedArea().getPos());
 	}
 
 	@Override
@@ -80,7 +80,7 @@ public class CloneOperation implements ActiveOperation {
 			// Reset the structure to remove potentially stale data that would be displayed until we get a response from the server
 			SharedClientData.setStructure(null);
 
-			PacketDistributor.sendToServer(new SelectionContentRequest(data.selection));
+			PacketDistributor.sendToServer(new CopyCommand(data.selection));
 			return operation;
 		}
 

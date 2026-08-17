@@ -11,12 +11,18 @@ import com.mojang.blaze3d.platform.InputConstants;
 import bt7s7k7.picker_dollies.data.SharedClientData;
 import bt7s7k7.picker_dollies.data.WorldClientData;
 import bt7s7k7.picker_dollies.interaction.Area;
+import bt7s7k7.picker_dollies.interaction.CloneOperation;
+import bt7s7k7.picker_dollies.interaction.DestinationArea;
 import bt7s7k7.picker_dollies.interaction.OperationActivator;
+import bt7s7k7.picker_dollies.network.CopyCommand;
+import bt7s7k7.picker_dollies.network.CutCommand;
+import bt7s7k7.picker_dollies.network.PasteCommand;
 import dev.ryanhcode.sable.companion.SableCompanion;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
+import net.minecraft.core.Vec3i;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
@@ -24,6 +30,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -34,6 +41,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 @EventBusSubscriber(modid = PickerDollies.MODID, value = Dist.CLIENT)
 public class ClientInputEvents {
@@ -123,12 +131,12 @@ public class ClientInputEvents {
 						.append(Component.keybind(PickerDolliesClient.CANCEL_OPERATION.get().getName()))
 						.append(Component.literal("]"))).withStyle(ChatFormatting.GRAY),
 				Component.translatable("gui.picker_dollies.new_selection", Component.literal("[").withStyle(ChatFormatting.WHITE)
-						.append(Component.keybind(PickerDolliesClient.MISC_OPERATION_ACTION.get().getName()))
+						.append(Component.keybind(PickerDolliesClient.OPERATION_PICK.get().getName()))
 						.append(Component.literal("]"))).withStyle(ChatFormatting.GRAY),
 				Component.translatable("gui.picker_dollies.start_operation",
 						Component.empty().append(SharedClientData.getSelectedOperation().getName()).withStyle(ChatFormatting.GOLD),
 						Component.literal("[").withStyle(ChatFormatting.WHITE)
-								.append(Component.keybind(PickerDolliesClient.SELECT_OPERATION.get().getName()))
+								.append(Component.keybind(PickerDolliesClient.ALTERNATE_INPUT.get().getName()))
 								.append(Component.literal("]")))
 						.withStyle(ChatFormatting.GREEN));
 	}
@@ -142,7 +150,7 @@ public class ClientInputEvents {
 						.append(Component.keybind(PickerDolliesClient.CANCEL_OPERATION.get().getName()))
 						.append(Component.literal("]"))).withStyle(ChatFormatting.GRAY),
 				Component.translatable("gui.picker_dollies.move_to_mouse", Component.literal("[").withStyle(ChatFormatting.WHITE)
-						.append(Component.keybind(PickerDolliesClient.MISC_OPERATION_ACTION.get().getName()))
+						.append(Component.keybind(PickerDolliesClient.OPERATION_PICK.get().getName()))
 						.append(Component.literal("]"))).withStyle(ChatFormatting.GRAY));
 	}
 
@@ -160,7 +168,7 @@ public class ClientInputEvents {
 		if (player == null) return null;
 		if (!hasActivator(player)) return null;
 
-		if (PickerDolliesClient.SELECT_OPERATION.get().isDown()) {
+		if (PickerDolliesClient.ALTERNATE_INPUT.get().isDown()) {
 			var selected = SharedClientData.getSelectedOperation();
 			return Stream.concat(
 					Stream.of(Component.translatable("gui.picker_dollies.select_operation_header").withStyle(Style.EMPTY.withBold(true).withColor(ChatFormatting.GOLD))),
@@ -215,7 +223,7 @@ public class ClientInputEvents {
 		var selection = WorldClientData.getInstance().selection;
 		var activeOperation = WorldClientData.getInstance().activeOperation;
 
-		if (activeOperation == null && PickerDolliesClient.SELECT_OPERATION.get().isDown()) {
+		if (activeOperation == null && PickerDolliesClient.ALTERNATE_INPUT.get().isDown()) {
 			if (scrollDelta < 0.0) SharedClientData.selectPreviousOperation();
 			if (scrollDelta > 0.0) SharedClientData.selectNextOperation();
 			event.setCanceled(true);
@@ -308,7 +316,7 @@ public class ClientInputEvents {
 			WorldClientData.getInstance().selection.clear();
 		}
 
-		if (PickerDolliesClient.MISC_OPERATION_ACTION.get().isActiveAndMatches(key)) {
+		if (PickerDolliesClient.OPERATION_PICK.get().isActiveAndMatches(key)) {
 			if (event != null) event.setCanceled(true);
 
 			if (activeOperation != null) {
@@ -355,6 +363,57 @@ public class ClientInputEvents {
 			activeOperation.applyMirror(mirror);
 		}
 
+		if (PickerDolliesClient.COPY.get().isActiveAndMatches(key)) {
+			if (activeOperation != null) return;
+			var selection = WorldClientData.getInstance().selection;
+			if (!selection.isActive()) return;
+
+			if (event != null) event.setCanceled(true);
+
+			PacketDistributor.sendToServer(new CopyCommand(selection.clone()));
+		}
+
+		if (PickerDolliesClient.CUT.get().isActiveAndMatches(key)) {
+			if (activeOperation != null) return;
+			var selection = WorldClientData.getInstance().selection;
+			if (!selection.isActive()) return;
+
+			if (event != null) event.setCanceled(true);
+
+			PacketDistributor.sendToServer(new CutCommand(selection.clone()));
+			selection.clear();
+		}
+
+		if (PickerDolliesClient.PASTE.get().isActiveAndMatches(key)) {
+			if (!CloneOperation.ACTIVATOR.canActivate()) return;
+
+			if (activeOperation != null) return;
+
+			if (event != null) event.setCanceled(true);
+
+			var target = getTargetedBlock(player, true);
+			if (target == null) return;
+
+			var structure = SharedClientData.getStructureData();
+
+			if (structure == null) {
+				player.sendSystemMessage(Component.translatable("command.picker_dollies.clipboard.empty").withStyle(ChatFormatting.RED));
+				return;
+			}
+
+			var selection = WorldClientData.getInstance().selection;
+			if (selection.isActive()) {
+				selection.clear();
+			}
+
+			var boundingBox = BoundingBox.fromCorners(Vec3i.ZERO, structure.template().getSize().offset(-1, -1, -1))
+					.moved(target.pos().getX(), target.pos().getY(), target.pos().getZ());
+
+			PacketDistributor.sendToServer(new PasteCommand(structure));
+			var destinationArea = new DestinationArea(target.dimension(), boundingBox);
+			var operation = new CloneOperation(destinationArea);
+			WorldClientData.getInstance().activeOperation = operation;
+		}
 	}
 
 	@SubscribeEvent

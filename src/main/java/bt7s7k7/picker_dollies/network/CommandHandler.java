@@ -3,6 +3,7 @@ package bt7s7k7.picker_dollies.network;
 import bt7s7k7.picker_dollies.PickerDollies;
 import bt7s7k7.picker_dollies.data.ServerPlayerData;
 import bt7s7k7.picker_dollies.data.SharedClientData;
+import bt7s7k7.picker_dollies.data.StructureData;
 import net.minecraft.world.level.block.Blocks;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -15,11 +16,11 @@ public class CommandHandler {
 	public static void onRegisterPayloads(final RegisterPayloadHandlersEvent event) {
 		final PayloadRegistrar registrar = event.registrar("1");
 
-		registrar.commonToServer(SelectionContentRequest.TYPE, SelectionContentRequest.STREAM_CODEC, (payload, ctx) -> {
+		registrar.commonToServer(CopyCommand.TYPE, CopyCommand.STREAM_CODEC, (payload, ctx) -> {
 			var selection = payload.selection();
 
 			if (!selection.isWithinLimits()) {
-				PickerDollies.LOGGER.error("Client tried ot execute SelectionContentRequest with a selection outside limits");
+				PickerDollies.LOGGER.error("Client tried ot execute CopyCommand with a selection outside limits");
 				return;
 			}
 
@@ -28,11 +29,15 @@ public class CommandHandler {
 
 			ServerPlayerData.of(ctx.player()).structure = structure;
 
-			ctx.reply(new SelectionContentResponse(structure));
+			ctx.reply(new SelectionContentResponse(new StructureData(structure)));
 		});
 
 		registrar.commonToClient(SelectionContentResponse.TYPE, SelectionContentResponse.STREAM_CODEC, (payload, ctx) -> {
-			SharedClientData.setStructure(payload.template());
+			SharedClientData.setStructure(payload.data());
+		});
+
+		registrar.commonToServer(PasteCommand.TYPE, PasteCommand.STREAM_CODEC, (payload, ctx) -> {
+			ServerPlayerData.of(ctx.player()).structure = payload.data().template();
 		});
 
 		registrar.commonToServer(MovementCommand.TYPE, MovementCommand.STREAM_CODEC, (payload, ctx) -> {
@@ -69,6 +74,22 @@ public class CommandHandler {
 			// code from MovementCommand, but StampCommand is not designed to be survival friendly,
 			// so this might not serve a purpose.
 			destination.applyStructure(structure, !ctx.player().isCreative());
+		});
+
+		registrar.commonToServer(CutCommand.TYPE, CutCommand.STREAM_CODEC, (payload, ctx) -> {
+			var selection = payload.from();
+
+			if (!selection.isWithinLimits()) {
+				PickerDollies.LOGGER.error("Client tried ot execute CutCommand with a selection outside limits");
+				return;
+			}
+
+			var structure = selection.getStructure();
+			if (structure == null) return;
+
+			selection.fillBlocks(Blocks.AIR.defaultBlockState());
+			ServerPlayerData.of(ctx.player()).structure = structure;
+			ctx.reply(new SelectionContentResponse(new StructureData(structure)));
 		});
 	}
 

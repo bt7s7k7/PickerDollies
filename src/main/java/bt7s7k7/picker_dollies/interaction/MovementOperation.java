@@ -4,8 +4,8 @@ import java.util.stream.Stream;
 
 import bt7s7k7.picker_dollies.data.SharedClientData;
 import bt7s7k7.picker_dollies.data.WorldClientData;
+import bt7s7k7.picker_dollies.network.CopyCommand;
 import bt7s7k7.picker_dollies.network.MovementCommand;
-import bt7s7k7.picker_dollies.network.SelectionContentRequest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.Vec3i;
@@ -86,7 +86,7 @@ public class MovementOperation implements ActiveOperation {
 			// Reset the structure to remove potentially stale data that would be displayed until we get a response from the server
 			SharedClientData.setStructure(null);
 
-			PacketDistributor.sendToServer(new SelectionContentRequest(data.selection));
+			PacketDistributor.sendToServer(new CopyCommand(data.selection));
 			return operation;
 		}
 
