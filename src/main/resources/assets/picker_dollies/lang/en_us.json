@@ -1,9 +1,13 @@
 {
 	"picker_dollies.configuration.title": "Picker Dollies Configs",
-	"picker_dollies.configuration.section.picker_dollies.common.toml": "Picker Dollies Configs",
-	"picker_dollies.configuration.section.picker_dollies.common.toml.title": "Picker Dollies Configs",
 	"picker_dollies.configuration.maxBlocks": "Maximum Affected Blocks",
 	"picker_dollies.configuration.maxBlocks.tooltip": "Maximum number of blocks supported per operation. In practice this limits the size of the initial selection.",
-	"picker_dollies.configuration.section.picker.dollies.common.toml": "Picker Dollies Configs",
-	"picker_dollies.configuration.section.picker.dollies.common.toml.title": "Picker Dollies Configs"
+	"picker_dollies.configuration.wandItem": "Wand Item",
+	"picker_dollies.configuration.wandItem.tooltip": "Item that will be used to perform operations using this mod. All the functionality of this item will be replaced, so pick something you won't be using.",
+	"picker_dollies.configuration.shouldRenderPreview": "Should Render Preview",
+	"picker_dollies.configuration.shouldRenderPreview.tooltip": "Determines if a preview for an operation result should be displayed, for example for a move operation this will be the blocks that will be placed. This feature is not super optimised, so disable this if you get frame drops.",
+	"picker_dollies.configuration.section.picker.dollies.client.toml": "Picker Dollies Client Config",
+	"picker_dollies.configuration.section.picker.dollies.client.toml.title": "Picker Dollies Client Config",
+	"picker_dollies.configuration.section.picker.dollies.server.toml": "Picker Dollies Server Config",
+	"picker_dollies.configuration.section.picker.dollies.server.toml.title": "Picker Dollies Server Config"
 }

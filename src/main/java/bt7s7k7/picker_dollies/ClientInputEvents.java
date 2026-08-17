@@ -15,10 +15,10 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -227,8 +227,11 @@ public class ClientInputEvents {
 	}
 
 	public static boolean hasActivator(Player player) {
+		var wandItem = ResourceLocation.tryParse(Config.WAND_ITEM.get());
+		if (wandItem == null) return false;
+
 		var heldStack = player.getMainHandItem();
-		return heldStack != null && heldStack.is(Items.STICK);
+		return heldStack != null && BuiltInRegistries.ITEM.getKey(heldStack.getItem()).equals(wandItem);
 	}
 
 	public static void register() {

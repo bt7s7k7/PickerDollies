@@ -10,6 +10,7 @@ import org.joml.Vector3f;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
+import bt7s7k7.picker_dollies.Config;
 import bt7s7k7.picker_dollies.PickerDollies;
 import bt7s7k7.picker_dollies.Support;
 import bt7s7k7.picker_dollies.data.SharedClientData;
@@ -43,6 +44,8 @@ public class SelectionRenderer {
 	@SubscribeEvent
 	public static void onRender(RenderLevelStageEvent event) {
 		if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES) {
+			if (!Config.SHOULD_RENDER_PREVIEW.getAsBoolean()) return;
+
 			var activeOperation = WorldClientData.getInstance().activeOperation;
 			if (activeOperation == null) return;
 
@@ -52,7 +55,6 @@ public class SelectionRenderer {
 			var renderBuffers = getRenderBuffers(event.getLevelRenderer());
 			renderSelectionOutlines(event.getPoseStack(), renderBuffers.bufferSource(), event.getCamera().getPosition());
 		}
-
 	}
 
 	public static void renderOperationPreview(PoseStack poseStack, MultiBufferSource bufferSource, Vec3 cameraPosition) {

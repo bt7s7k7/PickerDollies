@@ -105,10 +105,15 @@ public class Selection implements Area, Cloneable {
 	}
 
 	public boolean isWithinLimits() {
+		var maxBlocks = Config.MAX_BLOCKS.getAsInt();
+		// Check intermediates to prevent false positive due to overflow
 		var sizeX = this.bounds.getXSpan();
+		if (sizeX > maxBlocks) return false;
 		var sizeY = this.bounds.getYSpan();
+		if (sizeY > maxBlocks) return false;
 		var sizeZ = this.bounds.getZSpan();
-		return sizeX * sizeY * sizeZ <= Config.MAX_BLOCKS.getAsInt();
+		if (sizeZ > maxBlocks) return false;
+		return sizeX * sizeY * sizeZ <= maxBlocks;
 	}
 
 	public static Codec<Selection> CODEC = RecordCodecBuilder.create(instance -> (instance.group(
