@@ -55,7 +55,7 @@ public class PickerDolliesClient {
 	public static final Lazy<KeyMapping> MIRROR = Lazy.of(() -> new KeyMapping(
 			"key.picker_dollies.mirror",
 			InputConstants.Type.KEYSYM,
-			GLFW.GLFW_KEY_PAGE_DOWN,
+			GLFW.GLFW_KEY_HOME,
 			"key.categories.picker_dollies.picker_dollies"));
 
 	public PickerDolliesClient(ModContainer container) {
