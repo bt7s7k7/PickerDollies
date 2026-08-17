@@ -14,6 +14,8 @@
 	"key.picker_dollies.confirm_operation": "Confirm Operation",
 	"key.picker_dollies.cancel_operation": "Cancel Operation",
 	"key.picker_dollies.select_operation": "Select Operation",
+	"key.picker_dollies.rotate": "Rotate",
+	"key.picker_dollies.mirror": "Mirror",
 	"key.categories.picker_dollies.picker_dollies": "Picker Dollies",
 	"gui.picker_dollies.start_selection": "Press %s to to start selection",
 	"gui.picker_dollies.expand_selection": "Press %s to to expand selection",
@@ -26,7 +28,7 @@
 	"gui.picker_dollies.cancel_operation": "Press %s to to cancel",
 	"gui.picker_dollies.selection_too_large": "Selection too large (Max: %s)",
 	"gui.picker_dollies.selection": "Selection: [%s, %s, %s]",
-	"gui.picker_dollies.offset": "Offset: [%s, %s, %s]",
+	"gui.picker_dollies.move_state": "Offset: [%s, %s, %s] | Mirror: %s | Rotation: %s°",
 	"operation.picker_dollies.move": "Move",
 	"operation.picker_dollies.clone": "Clone"
 }

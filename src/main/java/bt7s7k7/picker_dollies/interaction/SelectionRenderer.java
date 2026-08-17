@@ -65,10 +65,17 @@ public class SelectionRenderer {
 		var mc = Minecraft.getInstance();
 		var player = mc.player;
 		if (player == null) return;
-		if (area.getDimension() != player.level().dimension()) return;
+		var level = player.level();
+		if (area.getDimension() != level.dimension()) return;
 
 		var structure = SharedClientData.getStructure();
 		if (structure == null) return;
+
+		var mirror = area.getMirror();
+		var rotation = area.getRotation();
+		var rawArea = area.getUntransformedArea();
+		var rawSize = rawArea.getSize();
+		var rawPos = rawArea.getPos();
 
 		@SuppressWarnings("unchecked")
 		var palettes = (List<StructureTemplate.Palette>) Support.getField(structure, "palettes", StructureTemplate.class);
@@ -76,11 +83,16 @@ public class SelectionRenderer {
 		var palette = palettes.getFirst();
 
 		for (var renderPosition : Support.getIterable(activeOperation.getPreviewRenderPositions()::iterator)) {
-			var pose = getPose(player.level(), area.getPos(), cameraPosition);
+			var pose = getPose(level, rawPos, cameraPosition);
 
 			for (var blockInfo : palette.blocks()) {
-				var pos = blockInfo.pos().offset(renderPosition);
-				var state = blockInfo.state();
+				var pos = blockInfo.pos();
+
+				pos = DestinationArea.transformPositionAccordingToMirrorAndRotate(pos, BlockPos.ZERO, rawSize, rotation, mirror);
+
+				pos = pos.offset(renderPosition);
+				var state = blockInfo.state().mirror(mirror).rotate(level, pos, rotation);
+
 				var blockPose = new Matrix4d(pose).translate(pos.getX(), pos.getY(), pos.getZ());
 
 				poseStack.pushPose();

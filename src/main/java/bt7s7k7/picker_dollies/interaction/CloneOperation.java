@@ -11,6 +11,8 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.level.block.Mirror;
+import net.minecraft.world.level.block.Rotation;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 public class CloneOperation implements ActiveOperation {
@@ -33,7 +35,7 @@ public class CloneOperation implements ActiveOperation {
 	}
 
 	@Override
-	public Area getDestination() {
+	public DestinationArea getDestination() {
 		return this.destination;
 	}
 
@@ -67,6 +69,16 @@ public class CloneOperation implements ActiveOperation {
 		var data = WorldClientData.getInstance();
 		data.activeOperation = null;
 		data.selection.clear();
+	}
+
+	@Override
+	public void applyMirror(Mirror mirror) {
+		this.destination.applyMirror(mirror);
+	}
+
+	@Override
+	public void applyRotation(Rotation rotation) {
+		this.destination.applyRotation(rotation);
 	}
 
 	public static final OperationActivator ACTIVATOR = new OperationActivator() {

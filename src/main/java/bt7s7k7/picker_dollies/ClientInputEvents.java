@@ -9,6 +9,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 
 import bt7s7k7.picker_dollies.data.SharedClientData;
 import bt7s7k7.picker_dollies.data.WorldClientData;
+import bt7s7k7.picker_dollies.interaction.Area;
 import bt7s7k7.picker_dollies.interaction.OperationActivator;
 import dev.ryanhcode.sable.companion.SableCompanion;
 import net.minecraft.ChatFormatting;
@@ -20,6 +21,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.block.Mirror;
+import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -202,20 +205,28 @@ public class ClientInputEvents {
 		if (activeOperation == null) return;
 		var destination = activeOperation.getDestination();
 		if (destination.getDimension() != player.level().dimension()) return;
+
+		var direction = getPlayerDirection(scrollDelta, destination);
+		var offset = direction.getNormal();
+		activeOperation.move(offset);
+		event.setCanceled(true);
+	}
+
+	public static Direction getPlayerDirection(double mul, Area area) {
+		var mc = Minecraft.getInstance();
+		var player = mc.player;
 		var level = player.level();
-		var position = destination.getPos();
+		var position = area.getPos();
 		var sublevel = SableCompanion.INSTANCE.getContaining(level, position);
 
-		var forward = player.getForward().scale(scrollDelta);
+		var forward = player.getForward().scale(mul);
 		if (sublevel != null) {
 			var newForward = sublevel.logicalPose().bakeIntoMatrix(new Matrix4d()).invert().transformDirection(new Vector3d(forward.x, forward.y, forward.z));
 			forward = new Vec3(newForward.x, newForward.y, newForward.z);
 		}
 
 		var direction = Direction.getNearest(forward);
-		var offset = direction.getNormal();
-		activeOperation.move(offset);
-		event.setCanceled(true);
+		return direction;
 	}
 
 	public static void handleInput(int action, InputConstants.Key key, ICancellableEvent event) {
@@ -268,6 +279,39 @@ public class ClientInputEvents {
 			if (target == null) return;
 			WorldClientData.getInstance().selection.reset(target);
 		}
+
+		if (PickerDolliesClient.ROTATE.get().isActiveAndMatches(key)) {
+			if (activeOperation == null) {
+				activeOperation = SharedClientData.getSelectedOperation().activate();
+			}
+
+			if (event != null) event.setCanceled(true);
+
+			activeOperation.applyRotation(Rotation.CLOCKWISE_90);
+		}
+
+		if (PickerDolliesClient.MIRROR.get().isActiveAndMatches(key)) {
+			if (activeOperation == null) {
+				activeOperation = SharedClientData.getSelectedOperation().activate();
+			}
+
+			if (event != null) event.setCanceled(true);
+
+			var destination = activeOperation.getDestination();
+			var direction = getPlayerDirection(1.0, destination);
+			var isRotated = destination.getRotation() == Rotation.CLOCKWISE_90 || destination.getRotation() == Rotation.COUNTERCLOCKWISE_90;
+
+			var mirror = switch (direction) {
+				case DOWN, UP -> null;
+				case NORTH, SOUTH -> isRotated ? Mirror.FRONT_BACK : Mirror.LEFT_RIGHT;
+				case EAST, WEST -> isRotated ? Mirror.LEFT_RIGHT : Mirror.FRONT_BACK;
+			};
+
+			if (mirror == null) return;
+
+			activeOperation.applyMirror(mirror);
+		}
+
 	}
 
 	@SubscribeEvent

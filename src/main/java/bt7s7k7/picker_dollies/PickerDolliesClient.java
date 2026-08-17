@@ -46,6 +46,18 @@ public class PickerDolliesClient {
 			GLFW.GLFW_KEY_X,
 			"key.categories.picker_dollies.picker_dollies"));
 
+	public static final Lazy<KeyMapping> ROTATE = Lazy.of(() -> new KeyMapping(
+			"key.picker_dollies.rotate",
+			InputConstants.Type.KEYSYM,
+			GLFW.GLFW_KEY_PAGE_UP,
+			"key.categories.picker_dollies.picker_dollies"));
+
+	public static final Lazy<KeyMapping> MIRROR = Lazy.of(() -> new KeyMapping(
+			"key.picker_dollies.mirror",
+			InputConstants.Type.KEYSYM,
+			GLFW.GLFW_KEY_PAGE_DOWN,
+			"key.categories.picker_dollies.picker_dollies"));
+
 	public PickerDolliesClient(ModContainer container) {
 		// Allows NeoForge to create a config screen for this mod's configs.
 		// The config screen is accessed by going to the Mods screen > clicking on your mod > clicking on config.
@@ -63,5 +75,7 @@ public class PickerDolliesClient {
 		event.register(CANCEL_OPERATION.get());
 		event.register(MISC_OPERATION_ACTION.get());
 		event.register(SELECT_OPERATION.get());
+		event.register(ROTATE.get());
+		event.register(MIRROR.get());
 	}
 }

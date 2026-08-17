@@ -12,6 +12,8 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Mirror;
+import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureProcessor;
@@ -22,6 +24,15 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
 public class DestinationArea implements Area {
 	protected ResourceKey<Level> dimension;
 	protected BoundingBox bounds;
+	protected Mirror mirror = Mirror.NONE;
+	protected Rotation rotation = Rotation.NONE;
+
+	public DestinationArea(ResourceKey<Level> dimension, BoundingBox bounds, Mirror mirror, Rotation rotation) {
+		this.dimension = dimension;
+		this.bounds = bounds;
+		this.mirror = mirror;
+		this.rotation = rotation;
+	}
 
 	// This field is only used client-side, so it is not part of the codec
 	protected Vec3i offset = Vec3i.ZERO;
@@ -36,9 +47,94 @@ public class DestinationArea implements Area {
 		return this.dimension;
 	}
 
+	public Area getUntransformedArea() {
+		return new Area() {
+			@Override
+			public ResourceKey<Level> getDimension() {
+				return DestinationArea.this.dimension;
+			}
+
+			@Override
+			public BoundingBox getBounds() {
+				return DestinationArea.this.bounds;
+			}
+		};
+	}
+
+	public static BlockPos transformPositionAccordingToMirrorAndRotate(BlockPos pos, BlockPos origin, Vec3i size, Rotation rotation, Mirror mirror) {
+		// var halfSize = new Vec3i(
+		// Mth.floorDiv(size.getX(), 2),
+		// Mth.floorDiv(size.getY(), 2),
+		// Mth.floorDiv(size.getZ(), 2));
+		// var center = origin.offset(halfSize);
+		// var relativePos = pos.subtract(center);
+
+		// if (rotation == Rotation.CLOCKWISE_90) {
+		// relativePos = new BlockPos(relativePos.getZ() + 1, relativePos.getY(), -relativePos.getX() - 1);
+		// } else if (rotation == Rotation.COUNTERCLOCKWISE_90) {
+		// relativePos = new BlockPos(-relativePos.getZ() + 1, relativePos.getY(), relativePos.getX() - 1);
+		// } else if (rotation == Rotation.CLOCKWISE_180) {
+		// relativePos = new BlockPos(-relativePos.getX(), relativePos.getY(), -relativePos.getZ());
+		// }
+
+		// return center.offset(relativePos);
+
+		var rectSize = Math.max(size.getX(), size.getZ());
+		var start = origin.offset(
+				-((rectSize - size.getX()) / 2),
+				0,
+				-((rectSize - size.getZ()) / 2));
+
+		var relativePos = pos.subtract(start);
+		var end = start.offset(
+				rectSize - 1,
+				0,
+				rectSize - 1);
+
+		if (mirror == Mirror.FRONT_BACK) {
+			relativePos = new BlockPos(rectSize - relativePos.getX() - 1, relativePos.getY(), relativePos.getZ());
+		} else if (mirror == Mirror.LEFT_RIGHT) {
+			relativePos = new BlockPos(relativePos.getX(), relativePos.getY(), rectSize - relativePos.getZ() - 1);
+		}
+
+		if (rotation == Rotation.CLOCKWISE_180) {
+			return new BlockPos(end.getX() - relativePos.getX(), pos.getY(), end.getZ() - relativePos.getZ());
+		} else if (rotation == Rotation.CLOCKWISE_90) {
+			return new BlockPos(end.getX() - relativePos.getZ(), pos.getY(), start.getZ() + relativePos.getX());
+		} else if (rotation == Rotation.COUNTERCLOCKWISE_90) {
+			return new BlockPos(start.getX() + relativePos.getZ(), pos.getY(), end.getZ() - relativePos.getX());
+		}
+
+		return start.offset(relativePos);
+	}
+
 	@Override
 	public BoundingBox getBounds() {
-		return this.bounds;
+		var originalPos = new BlockPos(this.bounds.minX(), this.bounds.minY(), this.bounds.minZ());
+		var originalSize = new Vec3i(this.bounds.getXSpan(), this.bounds.getYSpan(), this.bounds.getZSpan());
+		var originalEnd = originalPos.offset(originalSize).offset(-1, -1, -1);
+
+		var start = transformPositionAccordingToMirrorAndRotate(originalPos, originalPos, originalSize, this.rotation, this.mirror);
+		var end = transformPositionAccordingToMirrorAndRotate(originalEnd, originalPos, originalSize, this.rotation, this.mirror);
+
+		return BoundingBox.fromCorners(start, end);
+	}
+
+	public Mirror getMirror() {
+		return this.mirror;
+	}
+
+	public Rotation getRotation() {
+		return this.rotation;
+	}
+
+	public String getRotationAngle() {
+		return switch (this.rotation) {
+			case CLOCKWISE_180 -> "180";
+			case CLOCKWISE_90 -> "90";
+			case COUNTERCLOCKWISE_90 -> "270";
+			case NONE -> "0";
+		};
 	}
 
 	public void applyStructure(StructureTemplate structure, boolean destroyExistingBlocks) {
@@ -46,6 +142,28 @@ public class DestinationArea implements Area {
 		if (level == null) return;
 
 		var settings = new StructurePlaceSettings();
+		var rawArea = this.getUntransformedArea();
+		var pos = rawArea.getPos();
+		var size = rawArea.getSize();
+
+		settings.setMirror(this.mirror);
+		// Compensate for mirroring pivot
+		if (this.mirror == Mirror.LEFT_RIGHT) {
+			pos = pos.offset(0, 0, size.getZ() - 1);
+		} else if (this.mirror == Mirror.FRONT_BACK) {
+			pos = pos.offset(size.getX() - 1, 0, 0);
+		}
+
+		settings.setRotation(this.rotation);
+		// Compensate for rotation pivot -- this could probably be done via
+		// settings.setRotationPivot, but it's good to keep a united method.
+		if (this.rotation == Rotation.CLOCKWISE_90) {
+			pos = pos.offset(size.getX() - 1, 0, 0);
+		} else if (this.rotation == Rotation.COUNTERCLOCKWISE_90) {
+			pos = pos.offset(0, 0, size.getZ() - 1);
+		} else if (this.rotation == Rotation.CLOCKWISE_180) {
+			pos = pos.offset(size.getX() - 1, 0, size.getZ() - 1);
+		}
 
 		if (destroyExistingBlocks) {
 			settings.addProcessor(new StructureProcessor() {
@@ -62,7 +180,7 @@ public class DestinationArea implements Area {
 			});
 		}
 
-		structure.placeInWorld(level, this.getPos(), this.getPos(), settings, level.getRandom(), Block.UPDATE_CLIENTS);
+		structure.placeInWorld(level, pos, pos, settings, level.getRandom(), Block.UPDATE_CLIENTS);
 	}
 
 	public DestinationArea applyOffset(Vec3i offset) {
@@ -71,9 +189,31 @@ public class DestinationArea implements Area {
 		return this;
 	}
 
+	public DestinationArea applyMirror(Mirror mirror) {
+		if (mirror == Mirror.NONE) return this;
+
+		if (this.mirror == Mirror.NONE) {
+			this.mirror = mirror;
+		} else if (this.mirror == mirror) {
+			this.mirror = Mirror.NONE;
+		} else {
+			this.mirror = Mirror.NONE;
+			this.rotation = this.rotation.getRotated(Rotation.CLOCKWISE_180);
+		}
+
+		return this;
+	}
+
+	public DestinationArea applyRotation(Rotation rotation) {
+		this.rotation = this.rotation.getRotated(rotation);
+		return this;
+	}
+
 	public static Codec<DestinationArea> CODEC = RecordCodecBuilder.create(instance -> (instance.group(
 			Level.RESOURCE_KEY_CODEC.fieldOf("dimension").forGetter(DestinationArea::getDimension),
-			BoundingBox.CODEC.fieldOf("bounds").forGetter(DestinationArea::getBounds))).apply(instance, DestinationArea::new));
+			BoundingBox.CODEC.fieldOf("bounds").forGetter(DestinationArea::getBounds),
+			Mirror.CODEC.fieldOf("mirror").forGetter(DestinationArea::getMirror),
+			Rotation.CODEC.fieldOf("rotation").forGetter(DestinationArea::getRotation))).apply(instance, DestinationArea::new));
 
 	public static StreamCodec<ByteBuf, DestinationArea> STREAM_CODEC = ByteBufCodecs.fromCodec(CODEC);
 

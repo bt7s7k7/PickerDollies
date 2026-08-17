@@ -5,9 +5,11 @@ import java.util.stream.Stream;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.level.block.Mirror;
+import net.minecraft.world.level.block.Rotation;
 
 public interface ActiveOperation {
-	public Area getDestination();
+	public DestinationArea getDestination();
 
 	public int getColor();
 
@@ -20,4 +22,8 @@ public interface ActiveOperation {
 	public void apply();
 
 	public Stream<BlockPos> getPreviewRenderPositions();
+
+	public void applyMirror(Mirror mirror);
+
+	public void applyRotation(Rotation rotation);
 }

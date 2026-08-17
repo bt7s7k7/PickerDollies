@@ -11,6 +11,8 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.level.block.Mirror;
+import net.minecraft.world.level.block.Rotation;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 public class MovementOperation implements ActiveOperation {
@@ -29,11 +31,11 @@ public class MovementOperation implements ActiveOperation {
 
 	@Override
 	public Stream<BlockPos> getPreviewRenderPositions() {
-		return Stream.of(this.destination.getPos());
+		return Stream.of(this.destination.getUntransformedArea().getPos());
 	}
 
 	@Override
-	public Area getDestination() {
+	public DestinationArea getDestination() {
 		return this.destination;
 	}
 
@@ -44,10 +46,12 @@ public class MovementOperation implements ActiveOperation {
 
 	@Override
 	public Stream<Component> getHelpMessage() {
-		return Stream.concat(Stream.of(Component.translatable("gui.picker_dollies.offset",
+		return Stream.concat(Stream.of(Component.translatable("gui.picker_dollies.move_state",
 				Component.literal("" + this.destination.offset.getX()).withStyle(ChatFormatting.GOLD),
 				Component.literal("" + this.destination.offset.getY()).withStyle(ChatFormatting.GOLD),
-				Component.literal("" + this.destination.offset.getZ()).withStyle(ChatFormatting.GOLD))),
+				Component.literal("" + this.destination.offset.getZ()).withStyle(ChatFormatting.GOLD),
+				Component.empty().append(this.destination.getMirror().symbol()).withStyle(ChatFormatting.GOLD),
+				Component.literal(this.destination.getRotationAngle()).withStyle(ChatFormatting.GOLD)).withStyle(ChatFormatting.YELLOW)),
 				ClientInputEvents.baseOperationHelp());
 	}
 
@@ -59,6 +63,16 @@ public class MovementOperation implements ActiveOperation {
 	@Override
 	public void move(Vec3i offset) {
 		this.destination.applyOffset(offset);
+	}
+
+	@Override
+	public void applyMirror(Mirror mirror) {
+		this.destination.applyMirror(mirror);
+	}
+
+	@Override
+	public void applyRotation(Rotation rotation) {
+		this.destination.applyRotation(rotation);
 	}
 
 	@Override
