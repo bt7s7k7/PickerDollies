@@ -274,7 +274,18 @@ public class ClientInputEvents {
 
 			var target = getTargetedBlock(player);
 			if (target == null) return;
-			WorldClientData.getInstance().selection.expand(target);
+			var selection = WorldClientData.getInstance().selection;
+			// Additional check to prevent expanding a selection between sublevels
+			if (selection.isActive() && selection.getDimension().equals(player.level().dimension())) {
+				var activeSublevel = SableCompanion.INSTANCE.getContaining(player.level(), selection.getPos());
+				var newSublevel = SableCompanion.INSTANCE.getContaining(player.level(), target.pos());
+
+				if (!Objects.equal(activeSublevel, newSublevel)) {
+					selection.reset(target);
+					return;
+				}
+			}
+			selection.expand(target);
 		}
 
 		if (PickerDolliesClient.CANCEL_OPERATION.get().isActiveAndMatches(key)) {
