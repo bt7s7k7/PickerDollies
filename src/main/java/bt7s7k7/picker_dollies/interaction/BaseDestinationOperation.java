@@ -26,6 +26,11 @@ public abstract class BaseDestinationOperation implements ActiveOperation {
 	public abstract int getColor();
 
 	@Override
+	public boolean supportsMove() {
+		return true;
+	}
+
+	@Override
 	public boolean supportsMoveTo() {
 		return true;
 	}

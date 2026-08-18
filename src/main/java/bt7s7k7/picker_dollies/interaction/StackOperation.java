@@ -34,6 +34,11 @@ public class StackOperation implements ActiveOperation {
 	}
 
 	@Override
+	public boolean supportsMove() {
+		return true;
+	}
+
+	@Override
 	public boolean supportsMoveTo() {
 		return false;
 	}
@@ -176,6 +181,11 @@ public class StackOperation implements ActiveOperation {
 		@Override
 		public boolean supportsMoveTo() {
 			return false;
+		}
+
+		@Override
+		public boolean supportsMove() {
+			return true;
 		}
 
 		@Override

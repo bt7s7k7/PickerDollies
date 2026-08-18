@@ -17,6 +17,8 @@ public interface ActiveOperation {
 
 	public boolean supportsMoveTo();
 
+	public boolean supportsMove();
+
 	public default boolean ignoreInvalidation() {
 		return false;
 	}

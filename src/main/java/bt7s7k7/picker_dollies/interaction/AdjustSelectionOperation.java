@@ -18,6 +18,11 @@ import net.minecraft.world.level.block.Rotation;
 
 public class AdjustSelectionOperation implements ActiveOperation {
 	@Override
+	public boolean supportsMove() {
+		return true;
+	}
+
+	@Override
 	public boolean supportsMoveTo() {
 		return false;
 	}
@@ -138,6 +143,11 @@ public class AdjustSelectionOperation implements ActiveOperation {
 		@Override
 		public boolean supportsMoveTo() {
 			return false;
+		}
+
+		@Override
+		public boolean supportsMove() {
+			return true;
 		}
 	};
 }

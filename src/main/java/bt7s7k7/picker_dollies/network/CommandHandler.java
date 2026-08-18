@@ -5,7 +5,12 @@ import bt7s7k7.picker_dollies.PickerDollies;
 import bt7s7k7.picker_dollies.data.ServerPlayerData;
 import bt7s7k7.picker_dollies.data.SharedClientData;
 import bt7s7k7.picker_dollies.data.StructureData;
+import bt7s7k7.picker_dollies.interaction.DestinationArea;
+import bt7s7k7.picker_dollies.interaction.Selection;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
@@ -13,6 +18,10 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
 @EventBusSubscriber
 public class CommandHandler {
+	private static boolean canExecuteFreeOperation(Player player) {
+		return !Config.DISABLE_FREE_OPERATIONS_IN_SURVIVAL.getAsBoolean() || player.isCreative();
+	}
+
 	@SubscribeEvent
 	public static void onRegisterPayloads(final RegisterPayloadHandlersEvent event) {
 		final PayloadRegistrar registrar = event.registrar("1");
@@ -70,7 +79,7 @@ public class CommandHandler {
 
 			var destination = payload.to();
 
-			if (Config.DISABLE_FREE_OPERATIONS_IN_SURVIVAL.getAsBoolean() && !ctx.player().isCreative()) {
+			if (!canExecuteFreeOperation(ctx.player())) {
 				PickerDollies.LOGGER.error("Client tried ot execute StampCommand in survival but DISABLE_FREE_OPERATIONS_IN_SURVIVAL is enabled");
 				return;
 			}
@@ -92,7 +101,7 @@ public class CommandHandler {
 			var destination = payload.to();
 			var positions = payload.positions();
 
-			if (Config.DISABLE_FREE_OPERATIONS_IN_SURVIVAL.getAsBoolean() && !ctx.player().isCreative()) {
+			if (!canExecuteFreeOperation(ctx.player())) {
 				PickerDollies.LOGGER.error("Client tried ot execute StampManyCommand in survival but DISABLE_FREE_OPERATIONS_IN_SURVIVAL is enabled");
 				return;
 			}
@@ -100,6 +109,33 @@ public class CommandHandler {
 			for (var position : positions) {
 				destination.setPos(position);
 				destination.applyStructure(structure, !ctx.player().isCreative());
+			}
+		});
+
+		registrar.commonToServer(FillCommand.TYPE, FillCommand.STREAM_CODEC, (payload, ctx) -> {
+			var selection = payload.target();
+
+			if (!canExecuteFreeOperation(ctx.player())) {
+				PickerDollies.LOGGER.error("Client tried ot execute FillCommand in survival but DISABLE_FREE_OPERATIONS_IN_SURVIVAL is enabled");
+				return;
+			}
+
+			if (!selection.isWithinLimits()) {
+				PickerDollies.LOGGER.error("Client tried ot execute FillCommand with a selection outside limits");
+				return;
+			}
+
+			var source = payload.source();
+			var sourceSelection = new Selection(source.dimension(), new BoundingBox(source.pos()));
+			var structure = sourceSelection.getStructure();
+
+			if (!ctx.player().isCreative()) {
+				selection.destroyBlocks();
+			}
+
+			for (var pos : BlockPos.betweenClosed(selection.getPos(), selection.getPos().offset(selection.getSize()).offset(-1, -1, -1))) {
+				var destination = new DestinationArea(selection.getDimension(), new BoundingBox(pos));
+				destination.applyStructure(structure, false);
 			}
 		});
 
@@ -114,7 +150,7 @@ public class CommandHandler {
 			var structure = selection.getStructure();
 			if (structure == null) return;
 
-			if (Config.DISABLE_FREE_OPERATIONS_IN_SURVIVAL.getAsBoolean() && !ctx.player().isCreative()) {
+			if (!canExecuteFreeOperation(ctx.player())) {
 				// When cheat mode is off, the survival player will not be able to past the cut
 				// blocks back into the world -- we drop them to preserve resources.
 				selection.destroyBlocks();

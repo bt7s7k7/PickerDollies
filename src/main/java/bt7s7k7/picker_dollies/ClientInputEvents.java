@@ -53,21 +53,16 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 @EventBusSubscriber(modid = PickerDollies.MODID, value = Dist.CLIENT)
 public class ClientInputEvents {
-	private static GlobalPos getTargetedBlock(Player player, boolean above) {
-		// 1. Get the level (dimension) directly from the player
+	public static GlobalPos getTargetedBlock(Player player, boolean above) {
 		var level = player.level();
 
-		// 2. Perform a raycast along the player's line of sight
-		// Max reach distance (in blocks), includeFluids (boolean)
 		var reachDistance = 100.0f;
 		var hitResult = player.pick(reachDistance, 0.0f, false);
 
-		// 3. Verify the raycast hit a block (not air or an entity)
+		// Verify the raycast hit a block (not air or an entity)
 		if (hitResult.getType() != HitResult.Type.BLOCK) return null;
-
 		var blockHitResult = (BlockHitResult) hitResult;
 
-		// 4. Extract the BlockPos
 		var targetPos = blockHitResult.getBlockPos();
 		if (above) {
 			targetPos = targetPos.offset(blockHitResult.getDirection().getNormal());
@@ -182,27 +177,18 @@ public class ClientInputEvents {
 
 	public static final Stream<Component> baseSelectionHelp() {
 		var hitSelection = tryStartDrag(Minecraft.getInstance().player) != null;
-
+		var selectedOperation = SharedClientData.getSelectedOperation();
 		return Stream.<Component>of(
 				Component.translatable("gui.picker_dollies.expand_selection", keyMappingToComponent(PickerDolliesClient.CONFIRM_OPERATION)).withStyle(ChatFormatting.GRAY),
 				Component.translatable("gui.picker_dollies.clear_selection", keyMappingToComponent(PickerDolliesClient.CANCEL_OPERATION)).withStyle(ChatFormatting.GRAY),
-				!hitSelection && SharedClientData.getSelectedOperation().supportsMoveTo()
-						? Component.translatable("gui.picker_dollies.move_to_mouse", keyMappingToComponent(PickerDolliesClient.OPERATION_PICK)).withStyle(ChatFormatting.GRAY)
+				!hitSelection && selectedOperation.supportsMoveTo()
+						? selectedOperation.getMoveToMessage()
 						: null,
 				Component.translatable("gui.picker_dollies.copy_or_cut_prompt",
 						keyMappingToComponent(PickerDolliesClient.COPY),
 						keyMappingToComponent(PickerDolliesClient.CUT))
 						.withStyle(ChatFormatting.GRAY),
-				hitSelection
-						? Component.translatable("gui.picker_dollies.start_operation_drag",
-								keyMappingToComponent(PickerDolliesClient.OPERATION_PICK),
-								Component.empty().append(SharedClientData.getSelectedOperation().getName()).withStyle(ChatFormatting.GOLD),
-								keyMappingToComponent(PickerDolliesClient.ALTERNATE_INPUT))
-								.withStyle(ChatFormatting.GREEN)
-						: Component.translatable("gui.picker_dollies.start_operation",
-								Component.empty().append(SharedClientData.getSelectedOperation().getName()).withStyle(ChatFormatting.GOLD),
-								keyMappingToComponent(PickerDolliesClient.ALTERNATE_INPUT))
-								.withStyle(ChatFormatting.GREEN));
+				selectedOperation.getStartMessage(hitSelection));
 	}
 
 	public static final Stream<Component> baseOperationHelp() {
@@ -301,7 +287,9 @@ public class ClientInputEvents {
 
 		// If there is no active operation, but we have a selection, activate an operation
 		if (selection.isActive() && selection.isWithinLimits() && activeOperation == null) {
-			activeOperation = SharedClientData.getSelectedOperation().activate();
+			var selectedOperation = SharedClientData.getSelectedOperation();
+			if (!selectedOperation.supportsMove()) return;
+			activeOperation = selectedOperation.activate();
 		}
 
 		if (activeOperation == null) return;
@@ -404,20 +392,23 @@ public class ClientInputEvents {
 			if (event != null) event.setCanceled(true);
 
 			var newDrag = tryStartDrag(player);
+			var target = getTargetedBlock(player, true);
 
 			if (activeOperation == null) {
 				var selectedOperation = SharedClientData.getSelectedOperation();
 				if (newDrag == null && !selectedOperation.supportsMoveTo()) return;
+				if (target == null && !selectedOperation.supportsMove()) return;
+
 				activeOperation = selectedOperation.activate();
+				if (activeOperation == null) return;
 			}
 
-			if (newDrag != null) {
+			if (newDrag != null && activeOperation.supportsMove()) {
 				if (newDrag.target != activeOperation) newDrag = newDrag.withTarget(activeOperation);
 				WorldClientData.getInstance().dragState = newDrag;
 				return;
 			}
 
-			var target = getTargetedBlock(player, true);
 			if (target == null) return;
 			activeOperation.moveTo(target);
 			return;
@@ -426,6 +417,7 @@ public class ClientInputEvents {
 		if (PickerDolliesClient.ROTATE.get().isActiveAndMatches(key)) {
 			if (activeOperation == null) {
 				activeOperation = SharedClientData.getSelectedOperation().activate();
+				if (activeOperation == null) return;
 			}
 
 			if (event != null) event.setCanceled(true);
@@ -436,6 +428,7 @@ public class ClientInputEvents {
 		if (PickerDolliesClient.MIRROR.get().isActiveAndMatches(key)) {
 			if (activeOperation == null) {
 				activeOperation = SharedClientData.getSelectedOperation().activate();
+				if (activeOperation == null) return;
 			}
 
 			if (event != null) event.setCanceled(true);
