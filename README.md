@@ -22,10 +22,6 @@ The motivation for this work is the incompatibility between Axiom build tools an
 
   - **Creative flight noclip:** Allows creative players to phase thought blocks during flight as if they were in spectator
 
-# Showcase
-
-
-
 # Guide
 
 This mod does not add any items, instead it uses a designated *wand item* (configurable in client settings), which will bring out the mod interface. As a nod to World Edit, the default *wand item* is the wooden axe.
@@ -34,7 +30,7 @@ All keybindings are likewise configurable, so the defaults will be used in this 
 
 ## Selection
 
-![GIF demonstrating the creation of a small selection](./docs/selection_basic.webp)
+![GIF demonstrating the creation of a small selection](https://raw.githubusercontent.com/bt7s7k7/PickerDollies/refs/heads/master/docs/selection_basic.webp)
 
 To start using this mod, start a selection by using <kbd>Left Click</kbd> on a block. Clicking on additional blocks will expand the selection to encompass them. You can discard a selection using <kbd>Right Click</kbd>. The selection is visualised using a cyan box.
 
@@ -48,19 +44,19 @@ There are two ways of moving of a structure: using the scroll wheel or dragging 
 
 ### Using a scroll wheel
 
-![GIF showing off moving a structure using the scroll wheel](./docs/move_scroll.webp)
+![GIF showing off moving a structure using the scroll wheel](https://raw.githubusercontent.com/bt7s7k7/PickerDollies/refs/heads/master/docs/move_scroll.webp)
 
 The axis of movement is determined by the camera angle, the current axis is indicated by the axis indicator by the crosshair. Scrolling down will bring the structure towards the player and scrolling up will do the opposite.
 
 ### Dragging the mouse
 
-![GIF showing off moving a by dragging](./docs/move_drag.webp)
+![GIF showing off moving a by dragging](https://raw.githubusercontent.com/bt7s7k7/PickerDollies/refs/heads/master/docs/move_drag.webp)
 
 Point your cursor over a side of the movement bounding box and hold down the <kbd>Middle Button</kbd>. Moving your cursor in this state will move the structure to follow. Movement is restricted to the plane of the face of the bounding box you have originally pointed at.
 
 You can also moving during this time, the structure will follow your player's movement in the movement plane.
 
-![GIF showing off moving a structure by clicking, also demonstrating the transfer of blocks into a Sable sublevel](./docs/move_click.webp)
+![GIF showing off moving a structure by clicking, also demonstrating the transfer of blocks into a Sable sublevel](https://raw.githubusercontent.com/bt7s7k7/PickerDollies/refs/heads/master/docs/move_click.webp)
 
 To move a structure a larger distance or between sublevels/dimensions, click the <kbd>Middle Button</kbd> outside your structure and onto an external block. The structure will be brought over to touch the block.
 
@@ -70,7 +66,7 @@ Pressing <kbd>Left Button</kbd> will finish the movement and remove the original
 
 ### Mirroring and rotation
 
-![GIF showing off rotating and mirroring a structure](./docs/mirror_and_rotate.webp)
+![GIF showing off rotating and mirroring a structure](https://raw.githubusercontent.com/bt7s7k7/PickerDollies/refs/heads/master/docs/mirror_and_rotate.webp)
 
 You can horizontally mirror your structure by pressing the <kbd>Home</kbd> button. The axis of the flip is determined via your camera angle. 
 
@@ -78,8 +74,8 @@ You can rotate your structure by pressing the <kbd>Page Up</kbd> button. The str
 
 ## Clone Operation
 
-![GIF showing off creating multiple copies of a structure](./docs/clone_simple.webp)
-![GIF showing off duplicating a village house](./docs/clone_house.webp)
+![GIF showing off creating multiple copies of a structure](https://raw.githubusercontent.com/bt7s7k7/PickerDollies/refs/heads/master/docs/clone_simple.webp)
+![GIF showing off duplicating a village house](https://raw.githubusercontent.com/bt7s7k7/PickerDollies/refs/heads/master/docs/clone_house.webp)
 
 The controls of the clone operation are identical with the **Move Operation**, with the notable difference of not removing the original blocks when the operation is applied. Instead a copy of the structure will be stamped into the world. The operation will not automatically abort (configurable), allowing you to easily stamp multiple copies in a row.
 
@@ -87,7 +83,7 @@ Unlike the **Move Operation** the structure to be cloned is snapshotted the mome
 
 ### Using the clipboard
 
-![GIF showing cutting a structure and pasting it into a sublevel](./docs/clipboard.webp)
+![GIF showing cutting a structure and pasting it into a sublevel](https://raw.githubusercontent.com/bt7s7k7/PickerDollies/refs/heads/master/docs/clipboard.webp)
 
 When an operation starts or upon pressing <kbd>Ctrl + C</kbd>, the current selection will be put into your clipboard. You can also use <kbd>Ctrl + X</kbd>, which will additionally empty the selection.
 
@@ -104,7 +100,7 @@ You can interact with the clipboard using these client side commands:
 
 ## Adjust Selection Operation
 
-![GIF showing moving a selection both with the scroll wheel and by dragging in sequence](./docs/adjust_selection.webp)
+![GIF showing moving a selection both with the scroll wheel and by dragging in sequence](https://raw.githubusercontent.com/bt7s7k7/PickerDollies/refs/heads/master/docs/adjust_selection.webp)
 
 This operation allows to move and resize your selection without having to click on any blocks. While this operation is active, you can move your selection as you would move a structure with the **Move Operation**. 
 
@@ -112,34 +108,34 @@ This operation allows to move and resize your selection without having to click 
 
 You can resize the selection by holding <kbd>X</kbd>. When scrolling, you will move the face of the bounding box opposite of you in the axis as determined by your camera angle.
 
-![GIF showing resizing the selection by dragging](./docs/adjust_selection_adv.webp)
+![GIF showing resizing the selection by dragging](https://raw.githubusercontent.com/bt7s7k7/PickerDollies/refs/heads/master/docs/adjust_selection_adv.webp)
 
 When dragging, you will move the edge closest to your cursor in the plane of the face your have selected. 
 
 ## Fill Operation
 
-![GIF showing filling a hole using the fill operation](./docs/fill.webp)
+![GIF showing filling a hole using the fill operation](https://raw.githubusercontent.com/bt7s7k7/PickerDollies/refs/heads/master/docs/fill.webp)
 
 Click the <kbd>Middle Button</kbd> while looking at a block. This block will be used to fill the volume of your selection.
 
 ## Stack operation
 
-![GIF showing off duplicating a floor pattern](./docs/stack.webp)
-![GIF showing off creating stairs](./docs/stack_stairs.webp)
+![GIF showing off duplicating a floor pattern](https://raw.githubusercontent.com/bt7s7k7/PickerDollies/refs/heads/master/docs/stack.webp)
+![GIF showing off creating stairs](https://raw.githubusercontent.com/bt7s7k7/PickerDollies/refs/heads/master/docs/stack_stairs.webp)
 
 This operation is very complex and has still some UX problems. Using this operation, you can duplicate a structure many times with adjustable spacing and offsets. To specify in which directions, and how many times, the structure will be duplicated, you can either use your scrollwhell or drag using the <kbd>Middle Button</kbd> and behaves similarly to the **Adjust Selection Operation**.
 
-![GIF showing off duplicating a single block into a wall](./docs/stack_drag.webp)
+![GIF showing off duplicating a single block into a wall](https://raw.githubusercontent.com/bt7s7k7/PickerDollies/refs/heads/master/docs/stack_drag.webp)
 
 ### Adjusting the spacing and offsets
 
-![GIF showing off creating a diagonal staircase using the stack operation](./docs/stack_diagonal.webp)
+![GIF showing off creating a diagonal staircase using the stack operation](https://raw.githubusercontent.com/bt7s7k7/PickerDollies/refs/heads/master/docs/stack_diagonal.webp)
 
 You can adjust the gaps or offsets between created structures by holding <kbd>X</kbd>.
 
 ## Creative flight noclip
 
-![GIF showing off phasing through walls while flying in creative](./docs/noclip.webp)
+![GIF showing off phasing through walls while flying in creative](https://raw.githubusercontent.com/bt7s7k7/PickerDollies/refs/heads/master/docs/noclip.webp)
 
 This feature is disable by default and can be enabled in the server settings. When active, all creative players will phase through block when flying, as if they were in spectator. 
 
