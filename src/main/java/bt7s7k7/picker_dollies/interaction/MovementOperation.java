@@ -1,5 +1,6 @@
 package bt7s7k7.picker_dollies.interaction;
 
+import bt7s7k7.picker_dollies.Config;
 import bt7s7k7.picker_dollies.data.SharedClientData;
 import bt7s7k7.picker_dollies.data.WorldClientData;
 import bt7s7k7.picker_dollies.network.CopyCommand;
@@ -30,7 +31,12 @@ public class MovementOperation extends BaseDestinationOperation {
 		PacketDistributor.sendToServer(new MovementCommand(this.source.clone(), this.destination));
 		var data = WorldClientData.getInstance();
 		data.activeOperation = null;
-		data.selection.clear();
+
+		if (Config.MOVE_CONTINUE.getAsBoolean()) {
+			data.selection.reset(this.destination.dimension, this.destination.bounds);
+		} else {
+			data.selection.clear();
+		}
 	}
 
 	public static final OperationActivator ACTIVATOR = new OperationActivator() {

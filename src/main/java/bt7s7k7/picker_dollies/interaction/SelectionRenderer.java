@@ -232,7 +232,9 @@ public class SelectionRenderer {
 			selectionColor = 0xffff0000;
 		}
 
-		renderSelectionOutline(poseStack, bufferSource, cameraPosition, selection, selectionColor, 0.01);
+		if (data.activeOperation == null || Config.SHOW_SELECTION_DURING_OPERATION.getAsBoolean()) {
+			renderSelectionOutline(poseStack, bufferSource, cameraPosition, selection, selectionColor, 0.01);
+		}
 
 		if (data.activeOperation == null) return;
 

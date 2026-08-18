@@ -38,6 +38,18 @@ public class Config {
 			.comment("When using the wand, displays an indicator next to your crosshair that shows which in axis the active area will move when scrolling.")
 			.define("displayDirectionIndicator", true);
 
+	public static final ModConfigSpec.BooleanValue CLONE_CONTINUE = CLIENT_BUILDER
+			.comment("After stamping a copy using the clone operation, leave the clone operation active to smoothly create more copies.")
+			.define("cloneContinue", true);
+
+	public static final ModConfigSpec.BooleanValue MOVE_CONTINUE = CLIENT_BUILDER
+			.comment("After moving a structure using the move operation, select the resulting blocks in a new selection.")
+			.define("moveContinue", false);
+
+	public static final ModConfigSpec.BooleanValue SHOW_SELECTION_DURING_OPERATION = CLIENT_BUILDER
+			.comment("Show the initial selection even while an operation in progress. If this options is disabled, the selection will be hidden until the active operation is cancelled or applied.")
+			.define("showSelectionDuringOperation", true);
+
 	static final ModConfigSpec CLIENT_SPEC = CLIENT_BUILDER.build();
 
 	public static void register(ModContainer modContainer) {

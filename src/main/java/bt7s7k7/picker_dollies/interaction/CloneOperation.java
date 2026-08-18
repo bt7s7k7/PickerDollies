@@ -26,6 +26,12 @@ public class CloneOperation extends BaseDestinationOperation {
 	@Override
 	public void apply() {
 		PacketDistributor.sendToServer(new StampCommand(this.destination));
+
+		var data = WorldClientData.getInstance();
+
+		if (!Config.CLONE_CONTINUE.getAsBoolean()) {
+			data.activeOperation = null;
+		}
 	}
 
 	public static final OperationActivator ACTIVATOR = new OperationActivator() {
