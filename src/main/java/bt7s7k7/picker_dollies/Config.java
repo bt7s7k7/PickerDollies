@@ -14,6 +14,10 @@ public class Config {
 			.comment("Maximum number of blocks supported per operation. In practice this limits the size of the initial selection.")
 			.defineInRange("maxBlocks", 64 * 64 * 64, 0, Integer.MAX_VALUE);
 
+	public static final ModConfigSpec.IntValue REACH_DISTANCE = SERVER_BUILDER
+			.comment("Maximum distance to be able to select block using the wand.")
+			.defineInRange("reachDistance", 100, 5, 1000);
+
 	public static final ModConfigSpec.BooleanValue DISABLE_FREE_OPERATIONS_IN_SURVIVAL = SERVER_BUILDER
 			.comment("Disables all operations, which allow the player to duplicate materials, for players in survival mode. This includes pasting from the clipboard, instead the cut operation will drop items.")
 			.define("disableFreeOperationsInSurvival", false);
@@ -21,6 +25,11 @@ public class Config {
 	public static final ModConfigSpec.BooleanValue CREATIVE_FLIGHT_NOCLIP = SERVER_BUILDER
 			.comment("EXPERIMENTAL: Allows creative players to phase thought blocks during flight as if they were in spectator.")
 			.define("creativeFlightNoclip", false);
+
+	public static final ModConfigSpec.BooleanValue CLONE_ENTITIES = SERVER_BUILDER
+			.comment(
+					"EXPERIMENTAL: Operations that move or duplicate block in the world will also duplicate entities withing the initial selection. Be aware that there is no clean up code yet, when using the move operation, the original copy will remain in the original position.")
+			.define("cloneEntities", false);
 
 	static final ModConfigSpec SERVER_SPEC = SERVER_BUILDER.build();
 

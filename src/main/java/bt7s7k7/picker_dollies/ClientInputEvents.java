@@ -56,7 +56,7 @@ public class ClientInputEvents {
 	public static GlobalPos getTargetedBlock(Player player, boolean above) {
 		var level = player.level();
 
-		var reachDistance = 100.0f;
+		var reachDistance = Config.REACH_DISTANCE.getAsInt();
 		var hitResult = player.pick(reachDistance, 0.0f, false);
 
 		// Verify the raycast hit a block (not air or an entity)

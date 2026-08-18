@@ -105,7 +105,7 @@ public class Selection implements Area, Cloneable {
 		if (level == null) return null;
 
 		var structure = new StructureTemplate();
-		structure.fillFromWorld(level, this.getPos(), this.getSize(), false, Blocks.AIR);
+		structure.fillFromWorld(level, this.getPos(), this.getSize(), Config.CLONE_ENTITIES.getAsBoolean(), Blocks.AIR);
 
 		return structure;
 	}
