@@ -1,5 +1,6 @@
 package bt7s7k7.picker_dollies.interaction;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.joml.Matrix4d;
@@ -28,6 +29,7 @@ import net.minecraft.util.FastColor;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -118,6 +120,70 @@ public class SelectionRenderer {
 		return pose;
 	}
 
+	public static record RenderedArea(Matrix4d pose, double minX, double minY, double minZ, double maxX, double maxY, double maxZ) {
+		public static record HitResult(Vector3d position, Vector3d normal) {};
+
+		public HitResult clip(Vec3 start, Vec3 dir, double hitDistance) {
+			var aabb = new AABB(this.minX, this.minY, this.minZ, this.maxX, this.maxY, this.maxZ);
+			var inversePose = this.pose.invert(new Matrix4d());
+
+			var localStart = inversePose.transformPosition(new Vector3d(start.x, start.y, start.z));
+			var localDir = inversePose.transformDirection(new Vector3d(dir.x, dir.y, dir.z));
+			var localEnd = new Vector3d(localDir).mul(hitDistance).add(localStart);
+			var hit = AABB.clip(List.of(aabb), new Vec3(localStart.x, localStart.y, localStart.z), new Vec3(localEnd.x, localEnd.y, localEnd.z), BlockPos.ZERO);
+
+			debugShapes.add(new PointDebugShape(this.pose, localStart, 0xff00ff00));
+			debugShapes.add(new PointDebugShape(this.pose, localEnd, 0xffff0000));
+
+			if (hit == null) return null;
+
+			var localHitPosition = hit.getLocation();
+			var localHitNormal = hit.getDirection().getNormal();
+
+			debugShapes.add(new PointDebugShape(this.pose, new Vector3d(localHitPosition.x, localHitPosition.y, localHitPosition.z), 0xffff00ff));
+
+			var hitPosition = this.pose.transformPosition(new Vector3d(localHitPosition.x, localHitPosition.y, localHitPosition.z));
+			var hitNormal = this.pose.transformDirection(new Vector3d(localHitNormal.getX(), localHitNormal.getY(), localHitNormal.getZ()));
+
+			return new HitResult(hitPosition, hitNormal);
+		}
+	};
+
+	public static final List<RenderedArea> renderedActiveAreas = new ArrayList<>();
+	public static RenderedArea renderedSelection = null;
+
+	public interface DebugShape {
+		public void render(MultiBufferSource bufferSource);
+
+		public static Matrix4d getPoseWorldToView() {
+			var mc = Minecraft.getInstance();
+			var cameraPosition = mc.gameRenderer.getMainCamera().getPosition();
+			var pose = new Matrix4d().translate(new Vector3d(-cameraPosition.x, -cameraPosition.y, -cameraPosition.z));
+			return pose;
+		}
+	}
+
+	public static record LineDebugShape(Matrix4d pose, Vector3d from, Vector3d to, int color) implements DebugShape {
+		@Override
+		public void render(MultiBufferSource bufferSource) {
+			var consumer = bufferSource.getBuffer(RenderType.debugLineStrip(1.0));
+			var v3 = new Vector3f();
+			var v3d = new Vector3d();
+			consumer.addVertex(v3.set(this.pose.transformPosition(v3d.set(this.from)))).setColor(this.color);
+			consumer.addVertex(v3.set(this.pose.transformPosition(v3d.set(this.to)))).setColor(this.color);
+		}
+	};
+
+	public static record PointDebugShape(Matrix4d pose, Vector3d point, int color) implements DebugShape {
+		@Override
+		public void render(MultiBufferSource bufferSource) {
+			var consumer = bufferSource.getBuffer(RenderType.debugLineStrip(1.0));
+			renderOutlineBox(this.pose, consumer, this.point.x - 0.1, this.point.y - 0.1, this.point.z - 0.1, this.point.x + 0.1, this.point.y + 0.1, this.point.z + 0.1, this.color);
+		}
+	}
+
+	public static final List<DebugShape> debugShapes = new ArrayList<>();
+
 	public static void renderSelectionOutline(PoseStack poseStack, MultiBufferSource bufferSource, Vec3 cameraPosition, Area area, int color, double inflate) {
 		if (area == null) return;
 
@@ -135,33 +201,10 @@ public class SelectionRenderer {
 		var maxZ = boundingBox.maxZ() + 1.0 + inflate;
 
 		var pose = getPose(player.level(), area.getPos(), cameraPosition);
+		renderedActiveAreas.add(new RenderedArea(pose, minX, minY, minZ, maxX, maxY, maxZ));
 
 		var outline = bufferSource.getBuffer(RenderType.debugLineStrip(1.0));
-
-		var v3 = new Vector3f();
-		var v3d = new Vector3d();
-
-		outline.addVertex(v3.set(pose.transformPosition(v3d.set(minX, minY, minZ)))).setColor(color);
-		outline.addVertex(v3.set(pose.transformPosition(v3d.set(maxX, minY, minZ)))).setColor(color);
-		outline.addVertex(v3.set(pose.transformPosition(v3d.set(maxX, maxY, minZ)))).setColor(color);
-		outline.addVertex(v3.set(pose.transformPosition(v3d.set(minX, maxY, minZ)))).setColor(color);
-		outline.addVertex(v3.set(pose.transformPosition(v3d.set(minX, minY, minZ)))).setColor(color);
-
-		outline.addVertex(v3.set(pose.transformPosition(v3d.set(minX, minY, maxZ)))).setColor(color);
-
-		outline.addVertex(v3.set(pose.transformPosition(v3d.set(maxX, minY, maxZ)))).setColor(color);
-		outline.addVertex(v3.set(pose.transformPosition(v3d.set(maxX, minY, minZ)))).setColor(color);
-		outline.addVertex(v3.set(pose.transformPosition(v3d.set(maxX, minY, maxZ)))).setColor(color);
-
-		outline.addVertex(v3.set(pose.transformPosition(v3d.set(maxX, maxY, maxZ)))).setColor(color);
-		outline.addVertex(v3.set(pose.transformPosition(v3d.set(maxX, maxY, minZ)))).setColor(color);
-		outline.addVertex(v3.set(pose.transformPosition(v3d.set(maxX, maxY, maxZ)))).setColor(color);
-
-		outline.addVertex(v3.set(pose.transformPosition(v3d.set(minX, maxY, maxZ)))).setColor(color);
-		outline.addVertex(v3.set(pose.transformPosition(v3d.set(minX, maxY, minZ)))).setColor(color);
-		outline.addVertex(v3.set(pose.transformPosition(v3d.set(minX, maxY, maxZ)))).setColor(color);
-
-		outline.addVertex(v3.set(pose.transformPosition(v3d.set(minX, minY, maxZ)))).setColor(color);
+		renderOutlineBox(pose, outline, minX, minY, minZ, maxX, maxY, maxZ, color);
 
 		var time = (double) (System.nanoTime() / 1000) / 1000.0;
 		color = FastColor.ARGB32.color(Mth.floor((0.1f + 0.15f * (float) (Math.sin(time / 500) * 0.5 + 0.5)) * 255.0), color);
@@ -178,6 +221,37 @@ public class SelectionRenderer {
 				minX, minY, minZ,
 				maxX, maxY, maxZ,
 				color);
+	}
+
+	private static void renderOutlineBox(
+			Matrix4d pose, VertexConsumer consumer,
+			double minX, double minY, double minZ,
+			double maxX, double maxY, double maxZ,
+			int color) {
+		var v3 = new Vector3f();
+		var v3d = new Vector3d();
+
+		consumer.addVertex(v3.set(pose.transformPosition(v3d.set(minX, minY, minZ)))).setColor(color);
+		consumer.addVertex(v3.set(pose.transformPosition(v3d.set(maxX, minY, minZ)))).setColor(color);
+		consumer.addVertex(v3.set(pose.transformPosition(v3d.set(maxX, maxY, minZ)))).setColor(color);
+		consumer.addVertex(v3.set(pose.transformPosition(v3d.set(minX, maxY, minZ)))).setColor(color);
+		consumer.addVertex(v3.set(pose.transformPosition(v3d.set(minX, minY, minZ)))).setColor(color);
+
+		consumer.addVertex(v3.set(pose.transformPosition(v3d.set(minX, minY, maxZ)))).setColor(color);
+
+		consumer.addVertex(v3.set(pose.transformPosition(v3d.set(maxX, minY, maxZ)))).setColor(color);
+		consumer.addVertex(v3.set(pose.transformPosition(v3d.set(maxX, minY, minZ)))).setColor(color);
+		consumer.addVertex(v3.set(pose.transformPosition(v3d.set(maxX, minY, maxZ)))).setColor(color);
+
+		consumer.addVertex(v3.set(pose.transformPosition(v3d.set(maxX, maxY, maxZ)))).setColor(color);
+		consumer.addVertex(v3.set(pose.transformPosition(v3d.set(maxX, maxY, minZ)))).setColor(color);
+		consumer.addVertex(v3.set(pose.transformPosition(v3d.set(maxX, maxY, maxZ)))).setColor(color);
+
+		consumer.addVertex(v3.set(pose.transformPosition(v3d.set(minX, maxY, maxZ)))).setColor(color);
+		consumer.addVertex(v3.set(pose.transformPosition(v3d.set(minX, maxY, minZ)))).setColor(color);
+		consumer.addVertex(v3.set(pose.transformPosition(v3d.set(minX, maxY, maxZ)))).setColor(color);
+
+		consumer.addVertex(v3.set(pose.transformPosition(v3d.set(minX, minY, maxZ)))).setColor(color);
 	}
 
 	// Custom copy of DebugRenderer.renderFilledBox with support for double precision pose and points.
@@ -232,8 +306,21 @@ public class SelectionRenderer {
 			selectionColor = 0xffff0000;
 		}
 
+		for (var debugShape : debugShapes) {
+			debugShape.render(bufferSource);
+		}
+		debugShapes.clear();
+
+		renderedActiveAreas.clear();
+
+		renderedSelection = null;
 		if (data.activeOperation == null || Config.SHOW_SELECTION_DURING_OPERATION.getAsBoolean()) {
 			renderSelectionOutline(poseStack, bufferSource, cameraPosition, selection, selectionColor, 0.01);
+
+			if (!renderedActiveAreas.isEmpty()) {
+				renderedSelection = renderedActiveAreas.getFirst();
+				renderedActiveAreas.clear();
+			}
 		}
 
 		if (data.activeOperation == null) return;

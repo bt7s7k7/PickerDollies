@@ -15,6 +15,8 @@ public class WorldClientData {
 	public final Selection selection = new Selection();
 	public ActiveOperation activeOperation;
 
+	public DragState dragState;
+
 	private static WorldClientData instance = null;
 
 	public static WorldClientData getInstance() {

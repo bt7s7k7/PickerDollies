@@ -9,6 +9,7 @@ import bt7s7k7.picker_dollies.Config;
 import bt7s7k7.picker_dollies.PickerDollies;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.core.GlobalPos;
+import net.minecraft.core.Vec3i;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceKey;
@@ -92,6 +93,11 @@ public class Selection implements Area, Cloneable {
 		}
 
 		return Area.super.getLevel();
+	}
+
+	public Selection applyOffset(Vec3i offset) {
+		this.bounds = this.bounds.moved(offset.getX(), offset.getY(), offset.getZ());
+		return this;
 	}
 
 	public StructureTemplate getStructure() {

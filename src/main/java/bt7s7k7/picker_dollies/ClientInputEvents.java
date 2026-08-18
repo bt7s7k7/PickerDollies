@@ -2,17 +2,22 @@ package bt7s7k7.picker_dollies;
 
 import java.util.stream.Stream;
 
+import org.joml.Intersectiond;
 import org.joml.Matrix4d;
+import org.joml.RoundingMode;
 import org.joml.Vector3d;
+import org.joml.Vector3i;
 import org.spongepowered.include.com.google.common.base.Objects;
 
 import com.mojang.blaze3d.platform.InputConstants;
 
+import bt7s7k7.picker_dollies.data.DragState;
 import bt7s7k7.picker_dollies.data.SharedClientData;
 import bt7s7k7.picker_dollies.data.WorldClientData;
 import bt7s7k7.picker_dollies.interaction.CloneOperation;
 import bt7s7k7.picker_dollies.interaction.DestinationArea;
 import bt7s7k7.picker_dollies.interaction.OperationActivator;
+import bt7s7k7.picker_dollies.interaction.SelectionRenderer;
 import bt7s7k7.picker_dollies.network.CopyCommand;
 import bt7s7k7.picker_dollies.network.CutCommand;
 import bt7s7k7.picker_dollies.network.PasteCommand;
@@ -39,6 +44,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
+import net.neoforged.neoforge.client.event.RenderFrameEvent;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -65,6 +71,62 @@ public class ClientInputEvents {
 		}
 
 		return new GlobalPos(level.dimension(), targetPos);
+	}
+
+	private static DragState tryStartDrag(Player player) {
+		var dir = player.getViewVector(0.0f);
+		var playerPosition = player.getEyePosition(0.0f);
+
+		var hitDistance = 10.0;
+		// Rendered areas are positioned relative to the camera
+		var start = Vec3.ZERO;
+
+		var bestHit = (SelectionRenderer.RenderedArea.HitResult) null;
+		var bestHitDistance = Double.POSITIVE_INFINITY;
+		var hitSelection = false;
+
+		if (WorldClientData.getInstance().activeOperation == null) {
+			if (SelectionRenderer.renderedSelection != null) {
+				var hit = SelectionRenderer.renderedSelection.clip(start, dir, hitDistance);
+				if (hit != null) {
+					var distance = hit.position().distanceSquared(start.x, start.y, start.z);
+					if (distance < bestHitDistance) {
+						bestHitDistance = distance;
+						bestHit = hit;
+						hitSelection = true;
+					}
+				}
+			}
+		} else {
+			for (var area : SelectionRenderer.renderedActiveAreas) {
+				var hit = area.clip(start, dir, hitDistance);
+				if (hit == null) continue;
+
+				var distance = hit.position().distanceSquared(start.x, start.y, start.z);
+				if (distance >= bestHitDistance) continue;
+
+				bestHitDistance = distance;
+				bestHit = hit;
+				hitSelection = false;
+			}
+		}
+
+		if (bestHit == null) return null;
+
+		try {
+			Minecraft.getInstance().gui.setOverlayMessage(
+					Component.literal(
+							"(" + String.valueOf(bestHit.position().x).substring(0, 6) + ", " + String.valueOf(bestHit.position().y).substring(0, 6) + ", " + String.valueOf(bestHit.position().z).substring(0, 6) + ")" + " | Selection: " + hitSelection),
+					false);
+		} catch (RuntimeException e) {}
+
+		var worldHitPosition = new Vector3d(bestHit.position()).add(playerPosition.x, playerPosition.y, playerPosition.z);
+
+		SelectionRenderer.debugShapes.add(new SelectionRenderer.LineDebugShape(SelectionRenderer.DebugShape.getPoseWorldToView(), worldHitPosition, new Vector3d(worldHitPosition).add(bestHit.normal()), 0xffffff00));
+
+		if (!hitSelection && WorldClientData.getInstance().activeOperation == null) throw new NullPointerException();
+
+		return new DragState(hitSelection ? null : WorldClientData.getInstance().activeOperation, worldHitPosition, bestHit.normal());
 	}
 
 	@SubscribeEvent
@@ -281,6 +343,13 @@ public class ClientInputEvents {
 	}
 
 	public static void handleInput(int action, InputConstants.Key key, ICancellableEvent event) {
+		if (action == InputConstants.RELEASE) {
+			if (PickerDolliesClient.OPERATION_PICK.get().isActiveAndMatches(key)) {
+				WorldClientData.getInstance().dragState = null;
+				return;
+			}
+		}
+
 		if (action != InputConstants.PRESS) return;
 
 		var mc = Minecraft.getInstance();
@@ -332,6 +401,17 @@ public class ClientInputEvents {
 
 		if (PickerDolliesClient.OPERATION_PICK.get().isActiveAndMatches(key)) {
 			if (event != null) event.setCanceled(true);
+
+			var newDrag = tryStartDrag(player);
+			if (newDrag != null) {
+				if (activeOperation == null) {
+					activeOperation = SharedClientData.getSelectedOperation().activate();
+					newDrag = new DragState(activeOperation, newDrag.origin, newDrag.normal);
+				}
+
+				WorldClientData.getInstance().dragState = newDrag;
+				return;
+			}
 
 			if (activeOperation != null) {
 				var target = getTargetedBlock(player, true);
@@ -439,6 +519,46 @@ public class ClientInputEvents {
 	@SubscribeEvent
 	public static void onKeyboardEvent(InputEvent.Key event) {
 		handleInput(event.getAction(), InputConstants.getKey(event.getKey(), event.getScanCode()), null);
+	}
+
+	@SubscribeEvent
+	public static void onClientTick(RenderFrameEvent.Pre event) {
+		var mc = Minecraft.getInstance();
+		var player = mc.player;
+		if (player == null) return;
+
+		var partialTicks = event.getPartialTick().getGameTimeDeltaPartialTick(false);
+		var dir = player.getViewVector(partialTicks);
+		var pos = player.getEyePosition(partialTicks);
+
+		var data = WorldClientData.getInstance();
+		if (data.dragState == null) return;
+
+		var dragState = data.dragState;
+		// Stop the drag if an operation starts or ends
+		if (dragState.target != data.activeOperation) {
+			data.dragState = null;
+			return;
+		}
+
+		SelectionRenderer.debugShapes.add(new SelectionRenderer.LineDebugShape(SelectionRenderer.DebugShape.getPoseWorldToView(), dragState.origin, dragState.origin.add(dragState.normal, new Vector3d()), 0xffffff00));
+		var hit = Intersectiond.intersectRayPlane(new Vector3d(pos.x, pos.y, pos.z), new Vector3d(dir.x, dir.y, dir.z), dragState.origin, dragState.normal, partialTicks);
+
+		if (hit == -1) return;
+
+		var newPosition = new Vector3d(dir.x, dir.y, dir.z).mul(hit).add(pos.x, pos.y, pos.z);
+		SelectionRenderer.debugShapes.add(new SelectionRenderer.LineDebugShape(SelectionRenderer.DebugShape.getPoseWorldToView(), newPosition, newPosition.add(dragState.normal, new Vector3d()), 0xff00ff00));
+
+		var delta = newPosition.sub(dragState.lastPosition, new Vector3d()).get(RoundingMode.HALF_DOWN, new Vector3i());
+		if (delta.lengthSquared() == 0) return;
+
+		dragState.lastPosition.add(delta.x, delta.y, delta.z);
+
+		if (dragState.target == null) {
+			data.selection.applyOffset(new Vec3i(delta.x, delta.y, delta.z));
+		} else {
+			dragState.target.move(new Vec3i(delta.x, delta.y, delta.z), null, 0);
+		}
 	}
 
 	public static boolean hasActivator(Player player) {
