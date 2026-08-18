@@ -1,7 +1,6 @@
 package bt7s7k7.picker_dollies.interaction;
 
 import java.util.Arrays;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import bt7s7k7.picker_dollies.ClientInputEvents;
@@ -124,15 +123,13 @@ public class StackOperation implements ActiveOperation {
 				yStart == 0 && yEnd == 0 ? this.shift[Direction.Axis.Y.ordinal()] * gap.getY() : 0,
 				zStart == 0 && zEnd == 0 ? this.shift[Direction.Axis.Z.ordinal()] * gap.getZ() : 0);
 
-		return IntStream.rangeClosed(yStart, yEnd).boxed()
-				.flatMap(y -> IntStream.rangeClosed(xStart, xEnd).boxed()
-						.flatMap(x -> IntStream.rangeClosed(zStart, zEnd)
-								.filter(z -> z != 0 || y != 0 || x != 0)
-								.mapToObj(z -> new BlockPos(
-										x * bounds.getXSpan() + x * gap.getX() + (Math.abs(z) + Math.abs(y)) * shift.getX(),
-										y * bounds.getYSpan() + y * gap.getY() + (Math.abs(x) + Math.abs(z)) * shift.getY(),
-										z * bounds.getZSpan() + z * gap.getZ() + (Math.abs(x) + Math.abs(y)) * shift.getZ())
-												.offset(origin))));
+		return BlockPos.betweenClosedStream(new BlockPos(xStart, yStart, zStart), new BlockPos(xEnd, yEnd, zEnd))
+				.filter(pos -> pos.getZ() != 0 || pos.getY() != 0 || pos.getX() != 0)
+				.map(pos -> new BlockPos(
+						pos.getX() * bounds.getXSpan() + pos.getX() * gap.getX() + (Math.abs(pos.getZ()) + Math.abs(pos.getY())) * shift.getX(),
+						pos.getY() * bounds.getYSpan() + pos.getY() * gap.getY() + (Math.abs(pos.getX()) + Math.abs(pos.getZ())) * shift.getY(),
+						pos.getZ() * bounds.getZSpan() + pos.getZ() * gap.getZ() + (Math.abs(pos.getX()) + Math.abs(pos.getY())) * shift.getZ())
+								.offset(origin));
 	}
 
 	@Override
