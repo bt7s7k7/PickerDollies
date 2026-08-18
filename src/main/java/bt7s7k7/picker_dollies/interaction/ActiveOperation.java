@@ -15,6 +15,12 @@ public interface ActiveOperation {
 
 	public static record PreviewBox(DestinationArea area, BlockPos position) {}
 
+	public boolean supportsMoveTo();
+
+	public default boolean ignoreInvalidation() {
+		return false;
+	}
+
 	public GlobalPos getAnchor();
 
 	public Rotation getRotation();

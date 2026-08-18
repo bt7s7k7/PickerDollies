@@ -6,7 +6,9 @@ import com.mojang.blaze3d.platform.InputConstants;
 
 import bt7s7k7.picker_dollies.data.WorldClientData;
 import bt7s7k7.picker_dollies.interaction.SelectionRenderer;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
+import net.minecraft.network.chat.Component;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
@@ -106,5 +108,15 @@ public class PickerDolliesClient {
 		event.register(CUT.get());
 		event.register(COPY.get());
 		event.register(PASTE.get());
+	}
+
+	public static Component keyMappingToComponent(Lazy<KeyMapping> mapping) {
+		return keyMappingToComponent(mapping.get());
+	}
+
+	public static Component keyMappingToComponent(KeyMapping mapping) {
+		return Component.literal("[").withStyle(ChatFormatting.WHITE)
+				.append(Component.keybind(mapping.getName()))
+				.append(Component.literal("]"));
 	}
 }

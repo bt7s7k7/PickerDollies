@@ -26,6 +26,11 @@ public abstract class BaseDestinationOperation implements ActiveOperation {
 	public abstract int getColor();
 
 	@Override
+	public boolean supportsMoveTo() {
+		return true;
+	}
+
+	@Override
 	public Stream<Component> getHelpMessage() {
 		return Stream.concat(Stream.of(Component.translatable("gui.picker_dollies.move_state",
 				Component.literal("" + this.destination.offset.getX()).withStyle(ChatFormatting.GOLD),

@@ -34,6 +34,11 @@ public class StackOperation implements ActiveOperation {
 	}
 
 	@Override
+	public boolean supportsMoveTo() {
+		return false;
+	}
+
+	@Override
 	public GlobalPos getAnchor() {
 		return new GlobalPos(this.destination.dimension, this.destination.getPos());
 	}
@@ -87,7 +92,7 @@ public class StackOperation implements ActiveOperation {
 
 	@Override
 	public void moveTo(GlobalPos globalPos) {
-		this.destination.moveTo(globalPos);
+		// Not applicable
 	}
 
 	@Override
@@ -166,6 +171,11 @@ public class StackOperation implements ActiveOperation {
 
 			PacketDistributor.sendToServer(new CopyCommand(data.selection));
 			return operation;
+		}
+
+		@Override
+		public boolean supportsMoveTo() {
+			return false;
 		}
 
 		@Override

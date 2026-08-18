@@ -49,6 +49,11 @@ public class CloneOperation extends BaseDestinationOperation {
 		}
 
 		@Override
+		public boolean supportsMoveTo() {
+			return true;
+		}
+
+		@Override
 		public Component getName() {
 			return Component.translatable("operation.picker_dollies.clone");
 		}

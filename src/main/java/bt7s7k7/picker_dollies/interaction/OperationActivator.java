@@ -9,6 +9,8 @@ public interface OperationActivator {
 
 	public Component getName();
 
+	public boolean supportsMoveTo();
+
 	public default boolean canActivate() {
 		return this.canActivate(Minecraft.getInstance().player);
 	}

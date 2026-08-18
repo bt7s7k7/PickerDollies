@@ -1,5 +1,7 @@
 package bt7s7k7.picker_dollies;
 
+import static bt7s7k7.picker_dollies.PickerDolliesClient.keyMappingToComponent;
+
 import java.util.stream.Stream;
 
 import org.joml.Intersectiond;
@@ -32,6 +34,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
@@ -113,20 +116,11 @@ public class ClientInputEvents {
 
 		if (bestHit == null) return null;
 
-		try {
-			Minecraft.getInstance().gui.setOverlayMessage(
-					Component.literal(
-							"(" + String.valueOf(bestHit.position().x).substring(0, 6) + ", " + String.valueOf(bestHit.position().y).substring(0, 6) + ", " + String.valueOf(bestHit.position().z).substring(0, 6) + ")" + " | Selection: " + hitSelection),
-					false);
-		} catch (RuntimeException e) {}
-
 		var worldHitPosition = new Vector3d(bestHit.position()).add(playerPosition.x, playerPosition.y, playerPosition.z);
-
-		SelectionRenderer.debugShapes.add(new SelectionRenderer.LineDebugShape(SelectionRenderer.DebugShape.getPoseWorldToView(), worldHitPosition, new Vector3d(worldHitPosition).add(bestHit.normal()), 0xffffff00));
 
 		if (!hitSelection && WorldClientData.getInstance().activeOperation == null) throw new NullPointerException();
 
-		return new DragState(hitSelection ? null : WorldClientData.getInstance().activeOperation, worldHitPosition, bestHit.normal());
+		return new DragState(hitSelection ? null : WorldClientData.getInstance().activeOperation, worldHitPosition, bestHit.normal(), bestHit.primaryDirection(), bestHit.secondaryDirection());
 	}
 
 	@SubscribeEvent
@@ -156,7 +150,7 @@ public class ClientInputEvents {
 			}
 
 			if (Config.DISPLAY_DIRECTION_INDICATOR.getAsBoolean()) {
-				var direction = getPlayerDirection(baseColor, anchor);
+				var direction = getPlayerDirection(anchor);
 				var axis = switch (direction.getAxis()) {
 					case X -> Component.literal("X").withStyle(ChatFormatting.RED);
 					case Y -> Component.literal("Y").withStyle(ChatFormatting.GREEN);
@@ -169,6 +163,7 @@ public class ClientInputEvents {
 			var y = 8 + font.lineHeight;
 
 			for (var line : Support.getIterable(helpMessage::iterator)) {
+				if (line == null) continue;
 				guiGraphics.drawCenteredString(font, line, 0, y, baseColor);
 				y += font.lineHeight;
 			}
@@ -178,56 +173,54 @@ public class ClientInputEvents {
 	}
 
 	public static final Stream<Component> startSelectionHelp() {
-		var base = Component.translatable("gui.picker_dollies.start_selection", Component.literal("[").withStyle(ChatFormatting.WHITE)
-				.append(Component.keybind(PickerDolliesClient.CONFIRM_OPERATION.get().getName()))
-				.append(Component.literal("]"))).withStyle(ChatFormatting.GRAY);
-
-		if (SharedClientData.getStructureData() == null || !CloneOperation.ACTIVATOR.canActivate()) return Stream.of(base);
-
-		return Stream.of(base,
-				Component.translatable("gui.picker_dollies.paste_prompt", Component.literal("[").withStyle(ChatFormatting.WHITE)
-						.append(Component.keybind(PickerDolliesClient.PASTE.get().getName()))
-						.append(Component.literal("]"))).withStyle(ChatFormatting.GRAY));
+		return Stream.<Component>of(
+				Component.translatable("gui.picker_dollies.start_selection", keyMappingToComponent(PickerDolliesClient.CONFIRM_OPERATION)).withStyle(ChatFormatting.GRAY),
+				SharedClientData.getStructureData() != null && CloneOperation.ACTIVATOR.canActivate()
+						? Component.translatable("gui.picker_dollies.paste_prompt", keyMappingToComponent(PickerDolliesClient.PASTE)).withStyle(ChatFormatting.GRAY)
+						: null);
 	}
 
 	public static final Stream<Component> baseSelectionHelp() {
-		return Stream.of(
-				Component.translatable("gui.picker_dollies.expand_selection", Component.literal("[").withStyle(ChatFormatting.WHITE)
-						.append(Component.keybind(PickerDolliesClient.CONFIRM_OPERATION.get().getName()))
-						.append(Component.literal("]"))).withStyle(ChatFormatting.GRAY),
-				Component.translatable("gui.picker_dollies.clear_selection", Component.literal("[").withStyle(ChatFormatting.WHITE)
-						.append(Component.keybind(PickerDolliesClient.CANCEL_OPERATION.get().getName()))
-						.append(Component.literal("]"))).withStyle(ChatFormatting.GRAY),
-				Component.translatable("gui.picker_dollies.new_selection", Component.literal("[").withStyle(ChatFormatting.WHITE)
-						.append(Component.keybind(PickerDolliesClient.OPERATION_PICK.get().getName()))
-						.append(Component.literal("]"))).withStyle(ChatFormatting.GRAY),
+		var hitSelection = tryStartDrag(Minecraft.getInstance().player) != null;
+
+		return Stream.<Component>of(
+				Component.translatable("gui.picker_dollies.expand_selection", keyMappingToComponent(PickerDolliesClient.CONFIRM_OPERATION)).withStyle(ChatFormatting.GRAY),
+				Component.translatable("gui.picker_dollies.clear_selection", keyMappingToComponent(PickerDolliesClient.CANCEL_OPERATION)).withStyle(ChatFormatting.GRAY),
+				!hitSelection && SharedClientData.getSelectedOperation().supportsMoveTo()
+						? Component.translatable("gui.picker_dollies.move_to_mouse", keyMappingToComponent(PickerDolliesClient.OPERATION_PICK)).withStyle(ChatFormatting.GRAY)
+						: null,
 				Component.translatable("gui.picker_dollies.copy_or_cut_prompt",
-						Component.literal("[").withStyle(ChatFormatting.WHITE)
-								.append(Component.keybind(PickerDolliesClient.COPY.get().getName()))
-								.append(Component.literal("]")),
-						Component.literal("[").withStyle(ChatFormatting.WHITE)
-								.append(Component.keybind(PickerDolliesClient.CUT.get().getName()))
-								.append(Component.literal("]")))
+						keyMappingToComponent(PickerDolliesClient.COPY),
+						keyMappingToComponent(PickerDolliesClient.CUT))
 						.withStyle(ChatFormatting.GRAY),
-				Component.translatable("gui.picker_dollies.start_operation",
-						Component.empty().append(SharedClientData.getSelectedOperation().getName()).withStyle(ChatFormatting.GOLD),
-						Component.literal("[").withStyle(ChatFormatting.WHITE)
-								.append(Component.keybind(PickerDolliesClient.ALTERNATE_INPUT.get().getName()))
-								.append(Component.literal("]")))
-						.withStyle(ChatFormatting.GREEN));
+				hitSelection
+						? Component.translatable("gui.picker_dollies.start_operation_drag",
+								keyMappingToComponent(PickerDolliesClient.OPERATION_PICK),
+								Component.empty().append(SharedClientData.getSelectedOperation().getName()).withStyle(ChatFormatting.GOLD),
+								keyMappingToComponent(PickerDolliesClient.ALTERNATE_INPUT))
+								.withStyle(ChatFormatting.GREEN)
+						: Component.translatable("gui.picker_dollies.start_operation",
+								Component.empty().append(SharedClientData.getSelectedOperation().getName()).withStyle(ChatFormatting.GOLD),
+								keyMappingToComponent(PickerDolliesClient.ALTERNATE_INPUT))
+								.withStyle(ChatFormatting.GREEN));
 	}
 
 	public static final Stream<Component> baseOperationHelp() {
+		var pickHint = (Component) null;
+		var activeOperation = WorldClientData.getInstance().activeOperation;
+		if (activeOperation != null && activeOperation.supportsMoveTo()) {
+			var hit = tryStartDrag(Minecraft.getInstance().player);
+			if (hit != null) {
+				pickHint = Component.translatable("gui.picker_dollies.drag_operation", keyMappingToComponent(PickerDolliesClient.OPERATION_PICK)).withStyle(ChatFormatting.GRAY);
+			} else {
+				pickHint = Component.translatable("gui.picker_dollies.move_to_mouse", keyMappingToComponent(PickerDolliesClient.OPERATION_PICK)).withStyle(ChatFormatting.GRAY);
+			}
+		}
+
 		return Stream.of(
-				Component.translatable("gui.picker_dollies.apply_operation", Component.literal("[").withStyle(ChatFormatting.WHITE)
-						.append(Component.keybind(PickerDolliesClient.CONFIRM_OPERATION.get().getName()))
-						.append(Component.literal("]"))).withStyle(ChatFormatting.GRAY),
-				Component.translatable("gui.picker_dollies.cancel_operation", Component.literal("[").withStyle(ChatFormatting.WHITE)
-						.append(Component.keybind(PickerDolliesClient.CANCEL_OPERATION.get().getName()))
-						.append(Component.literal("]"))).withStyle(ChatFormatting.GRAY),
-				Component.translatable("gui.picker_dollies.move_to_mouse", Component.literal("[").withStyle(ChatFormatting.WHITE)
-						.append(Component.keybind(PickerDolliesClient.OPERATION_PICK.get().getName()))
-						.append(Component.literal("]"))).withStyle(ChatFormatting.GRAY));
+				Component.translatable("gui.picker_dollies.apply_operation", keyMappingToComponent(PickerDolliesClient.CONFIRM_OPERATION)).withStyle(ChatFormatting.GRAY),
+				Component.translatable("gui.picker_dollies.cancel_operation", keyMappingToComponent(PickerDolliesClient.CANCEL_OPERATION)).withStyle(ChatFormatting.GRAY),
+				pickHint);
 	}
 
 	private static Stream<Component> getHelpMessage() {
@@ -312,33 +305,41 @@ public class ClientInputEvents {
 		}
 
 		if (activeOperation == null) return;
-		var destination = activeOperation.getAnchor();
-		if (destination.dimension() != player.level().dimension()) return;
+		var anchor = activeOperation.getAnchor();
+		if (anchor.dimension() != player.level().dimension()) return;
 
-		var direction = getPlayerDirection(scrollDelta, destination);
+		var direction = getPlayerDirection(anchor);
+		if (scrollDelta < 0.0) direction = direction.getOpposite();
+
 		var offset = direction.getNormal();
 		activeOperation.move(offset, scrollDelta > 0.0 ? direction : direction.getOpposite(), scrollDelta > 0.0 ? 1 : -1);
 		event.setCanceled(true);
 	}
 
-	public static Direction getPlayerDirection(double mul, GlobalPos anchor) {
-		var mc = Minecraft.getInstance();
-		var player = mc.player;
-		var forward = player.getForward().scale(mul);
+	public static Direction getPlayerDirection(GlobalPos anchor) {
+		var player = Minecraft.getInstance().player;
+		return getDirectionFromVector(player.getForward(), player.level(), anchor);
+	}
 
+	public static Direction getDirectionFromVector(Vec3 forward, Level level, GlobalPos anchor) {
+		return getDirectionFromVector(new Vector3d(forward.x, forward.y, forward.z), level, anchor);
+	}
+
+	public static Direction getDirectionFromVector(Vector3d forward, Level level, GlobalPos anchor) {
+		return getDirectionFromVector(forward, new Matrix4d(), level, anchor);
+	}
+
+	public static Direction getDirectionFromVector(Vector3d forward, Matrix4d pose, Level level, GlobalPos anchor) {
 		if (anchor != null) {
-			var level = player.level();
-
 			var position = anchor.pos();
 			var sublevel = SableCompanion.INSTANCE.getContaining(level, position);
 
 			if (sublevel != null) {
-				var newForward = sublevel.logicalPose().bakeIntoMatrix(new Matrix4d()).invert().transformDirection(new Vector3d(forward.x, forward.y, forward.z));
-				forward = new Vec3(newForward.x, newForward.y, newForward.z);
+				sublevel.logicalPose().bakeIntoMatrix(pose).invert().transformDirection(forward);
 			}
 		}
 
-		var direction = Direction.getNearest(forward);
+		var direction = Direction.getNearest(forward.x, forward.y, forward.z);
 		return direction;
 	}
 
@@ -403,26 +404,23 @@ public class ClientInputEvents {
 			if (event != null) event.setCanceled(true);
 
 			var newDrag = tryStartDrag(player);
-			if (newDrag != null) {
-				if (activeOperation == null) {
-					activeOperation = SharedClientData.getSelectedOperation().activate();
-					newDrag = new DragState(activeOperation, newDrag.origin, newDrag.normal);
-				}
 
+			if (activeOperation == null) {
+				var selectedOperation = SharedClientData.getSelectedOperation();
+				if (newDrag == null && !selectedOperation.supportsMoveTo()) return;
+				activeOperation = selectedOperation.activate();
+			}
+
+			if (newDrag != null) {
+				if (newDrag.target != activeOperation) newDrag = newDrag.withTarget(activeOperation);
 				WorldClientData.getInstance().dragState = newDrag;
 				return;
 			}
 
-			if (activeOperation != null) {
-				var target = getTargetedBlock(player, true);
-				if (target == null) return;
-				activeOperation.moveTo(target);
-				return;
-			}
-
-			var target = getTargetedBlock(player, false);
+			var target = getTargetedBlock(player, true);
 			if (target == null) return;
-			WorldClientData.getInstance().selection.reset(target);
+			activeOperation.moveTo(target);
+			return;
 		}
 
 		if (PickerDolliesClient.ROTATE.get().isActiveAndMatches(key)) {
@@ -443,7 +441,7 @@ public class ClientInputEvents {
 			if (event != null) event.setCanceled(true);
 
 			var anchor = activeOperation.getAnchor();
-			var direction = getPlayerDirection(1.0, anchor);
+			var direction = getPlayerDirection(anchor);
 			var rotation = activeOperation.getRotation();
 			var isRotated = rotation == Rotation.CLOCKWISE_90 || rotation == Rotation.COUNTERCLOCKWISE_90;
 
@@ -536,28 +534,50 @@ public class ClientInputEvents {
 
 		var dragState = data.dragState;
 		// Stop the drag if an operation starts or ends
-		if (dragState.target != data.activeOperation) {
+		if (dragState.target != data.activeOperation && (dragState.target == null || !dragState.target.ignoreInvalidation())) {
 			data.dragState = null;
 			return;
 		}
 
-		SelectionRenderer.debugShapes.add(new SelectionRenderer.LineDebugShape(SelectionRenderer.DebugShape.getPoseWorldToView(), dragState.origin, dragState.origin.add(dragState.normal, new Vector3d()), 0xffffff00));
+		SelectionRenderer.debugShapes.add(new SelectionRenderer.PointDebugShape(SelectionRenderer.DebugShape.getPoseWorldToView(), dragState.origin, 0xffffff00));
 		var hit = Intersectiond.intersectRayPlane(new Vector3d(pos.x, pos.y, pos.z), new Vector3d(dir.x, dir.y, dir.z), dragState.origin, dragState.normal, partialTicks);
 
 		if (hit == -1) return;
 
 		var newPosition = new Vector3d(dir.x, dir.y, dir.z).mul(hit).add(pos.x, pos.y, pos.z);
-		SelectionRenderer.debugShapes.add(new SelectionRenderer.LineDebugShape(SelectionRenderer.DebugShape.getPoseWorldToView(), newPosition, newPosition.add(dragState.normal, new Vector3d()), 0xff00ff00));
 
-		var delta = newPosition.sub(dragState.lastPosition, new Vector3d()).get(RoundingMode.HALF_DOWN, new Vector3i());
-		if (delta.lengthSquared() == 0) return;
+		var delta = newPosition.sub(dragState.lastPosition, new Vector3d());
+		var pose = new Matrix4d();
+		var direction = getDirectionFromVector(delta, pose, player.level(), dragState.target.getAnchor());
+		var deltaFloored = delta.get(RoundingMode.HALF_DOWN, new Vector3i());
+		if (deltaFloored.lengthSquared() == 0) return;
 
-		dragState.lastPosition.add(delta.x, delta.y, delta.z);
+		var worldDeltaFloored = pose.invert().transformDirection(new Vector3d(deltaFloored.x, deltaFloored.y, deltaFloored.z));
+		dragState.lastPosition.add(worldDeltaFloored);
+
+		int amount;
+		Direction actualDirection;
+		if (direction == dragState.primaryDirection) {
+			amount = 1;
+			actualDirection = dragState.primaryDirection;
+		} else if (direction == dragState.primaryDirection.getOpposite()) {
+			amount = -1;
+			actualDirection = dragState.primaryDirection;
+		} else if (direction == dragState.secondaryDirection) {
+			amount = 1;
+			actualDirection = dragState.secondaryDirection;
+		} else if (direction == dragState.secondaryDirection.getOpposite()) {
+			amount = -1;
+			actualDirection = dragState.secondaryDirection;
+		} else {
+			PickerDollies.LOGGER.error("Failed to find the correct direction from {} for drag event {}", direction, dragState);
+			return;
+		}
 
 		if (dragState.target == null) {
-			data.selection.applyOffset(new Vec3i(delta.x, delta.y, delta.z));
+			data.selection.applyOffset(actualDirection.getNormal().multiply(amount));
 		} else {
-			dragState.target.move(new Vec3i(delta.x, delta.y, delta.z), null, 0);
+			dragState.target.move(new Vec3i(deltaFloored.x, deltaFloored.y, deltaFloored.z), actualDirection, amount);
 		}
 	}
 
