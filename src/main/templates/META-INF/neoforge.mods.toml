@@ -46,7 +46,7 @@ authors="bt7s7k7"
 
 # The description text for the mod (multi line!) (#mandatory)
 description='''
-Move blocks or entire builds quickly and easily. Inspired by the Factorio mod of the same name and Axiom build tools.
+Move structures quickly and easily. Inspired by the Factorio mod of the same name and Axiom build tools.
 '''
 
 # The [[mixins]] block allows you to declare your mixin config to FML so that it gets loaded.
