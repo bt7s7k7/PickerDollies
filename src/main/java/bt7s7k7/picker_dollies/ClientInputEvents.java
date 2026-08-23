@@ -1,18 +1,21 @@
 package bt7s7k7.picker_dollies;
 
+import java.util.Objects;
+
 import org.joml.Intersectiond;
 import org.joml.Matrix4d;
 import org.joml.RoundingMode;
 import org.joml.Vector3d;
 import org.joml.Vector3i;
-import org.spongepowered.include.com.google.common.base.Objects;
 
 import com.mojang.blaze3d.platform.InputConstants;
 
 import bt7s7k7.picker_dollies.data.DestinationArea;
 import bt7s7k7.picker_dollies.data.DragState;
+import bt7s7k7.picker_dollies.data.QuickFillState;
 import bt7s7k7.picker_dollies.data.SharedClientData;
 import bt7s7k7.picker_dollies.data.WorldClientData;
+import bt7s7k7.picker_dollies.network.BlockPlacedNotification;
 import bt7s7k7.picker_dollies.network.CopyCommand;
 import bt7s7k7.picker_dollies.network.CutCommand;
 import bt7s7k7.picker_dollies.network.PasteCommand;
@@ -21,6 +24,7 @@ import bt7s7k7.picker_dollies.rendering.DebugRenderer;
 import bt7s7k7.picker_dollies.support.LookingUtil;
 import bt7s7k7.picker_dollies.support.Messages;
 import bt7s7k7.picker_dollies.support.Support;
+import bt7s7k7.picker_dollies.support.VectorUtil;
 import bt7s7k7.picker_dollies.support.WandItem;
 import dev.ryanhcode.sable.companion.SableCompanion;
 import net.minecraft.ChatFormatting;
@@ -107,21 +111,30 @@ public class ClientInputEvents {
 
 		// Ignore horizontal scrolling or zero deltas
 		if (scrollDelta == 0.0) return;
-		if (!WandItem.inMainHand()) return;
+
+		if (!WandItem.inMainHand()) {
+			if (WandItem.isOffHand() && PickerDolliesClient.ALTERNATE_INPUT.get().isDown()) {
+				if (scrollDelta > 0.0) SharedClientData.selectedQuickFillShape.selectPrevious();
+				if (scrollDelta < 0.0) SharedClientData.selectedQuickFillShape.selectNext();
+				event.setCanceled(true);
+			}
+
+			return;
+		}
 
 		var selection = WorldClientData.getInstance().selection;
 		var activeOperation = WorldClientData.getInstance().activeOperation;
 
 		if (activeOperation == null && PickerDolliesClient.ALTERNATE_INPUT.get().isDown()) {
-			if (scrollDelta > 0.0) SharedClientData.selectPreviousOperation();
-			if (scrollDelta < 0.0) SharedClientData.selectNextOperation();
+			if (scrollDelta > 0.0) SharedClientData.selectedOperation.selectPrevious();
+			if (scrollDelta < 0.0) SharedClientData.selectedOperation.selectNext();
 			event.setCanceled(true);
 			return;
 		}
 
 		// If there is no active operation, but we have a selection, activate an operation
 		if (selection.isActive() && selection.isWithinLimits() && activeOperation == null) {
-			var selectedOperation = SharedClientData.getSelectedOperation();
+			var selectedOperation = SharedClientData.selectedOperation.get();
 			if (!selectedOperation.supportsMove()) return;
 			activeOperation = selectedOperation.activate();
 		}
@@ -135,6 +148,32 @@ public class ClientInputEvents {
 
 		var offset = direction.getNormal();
 		activeOperation.move(offset, scrollDelta > 0.0 ? direction : direction.getOpposite(), scrollDelta > 0.0 ? 1 : -1);
+		event.setCanceled(true);
+	}
+
+	@SubscribeEvent
+	public static void onBlockPlace(BlockPlacedNotification event) {
+		if (!WandItem.isOffHand()) return;
+		var player = Minecraft.getInstance().player;
+		if (player.level().dimension() != event.pos().dimension()) return;
+		if (!CloneOperation.ACTIVATOR.canActivate(player)) return;
+
+		WorldClientData.getInstance().quickFill = QuickFillState.makeBuild(event.pos());
+	}
+
+	@SubscribeEvent
+	public static void onBlockBreak(InputEvent.InteractionKeyMappingTriggered event) {
+		if (!event.isAttack()) return;
+		if (!WandItem.isOffHand()) return;
+		var player = Minecraft.getInstance().player;
+		var target = LookingUtil.getTargetedBlock(player, false);
+
+		if (target == null) return;
+
+		var pos = target.pos();
+		var level = player.level();
+
+		WorldClientData.getInstance().quickFill = QuickFillState.makeDestroy(new GlobalPos(level.dimension(), pos));
 		event.setCanceled(true);
 	}
 
@@ -155,6 +194,23 @@ public class ClientInputEvents {
 		// Ensure the player is actually in-game
 		if (player == null) return;
 
+		var quickFill = WorldClientData.getInstance().quickFill;
+		if (quickFill != null) {
+			if (quickFill.getApplyKey().isActiveAndMatches(key)) {
+				if (event != null) event.setCanceled(true);
+				if (!quickFill.isWithinLimits()) return;
+				quickFill.apply();
+				return;
+			}
+
+			if (quickFill.getCancelKey().isActiveAndMatches(key)) {
+				if (event != null) event.setCanceled(true);
+				quickFill.cancel();
+				WorldClientData.getInstance().quickFill = null;
+				return;
+			}
+		}
+
 		var activeOperation = WorldClientData.getInstance().activeOperation;
 		if (!WandItem.inMainHand()) return;
 
@@ -174,7 +230,7 @@ public class ClientInputEvents {
 				var activeSublevel = SableCompanion.INSTANCE.getContaining(player.level(), selection.getPos());
 				var newSublevel = SableCompanion.INSTANCE.getContaining(player.level(), target.pos());
 
-				if (!Objects.equal(activeSublevel, newSublevel)) {
+				if (!Objects.equals(activeSublevel, newSublevel)) {
 					selection.reset(target);
 					return;
 				}
@@ -205,7 +261,7 @@ public class ClientInputEvents {
 			var target = LookingUtil.getTargetedBlock(player, true);
 
 			if (activeOperation == null) {
-				var selectedOperation = SharedClientData.getSelectedOperation();
+				var selectedOperation = SharedClientData.selectedOperation.get();
 				if (newDrag == null && !selectedOperation.supportsMoveTo()) return;
 				if (target == null && !selectedOperation.supportsMove()) return;
 
@@ -226,7 +282,7 @@ public class ClientInputEvents {
 
 		if (PickerDolliesClient.ROTATE.get().isActiveAndMatches(key)) {
 			if (activeOperation == null) {
-				activeOperation = SharedClientData.getSelectedOperation().activate();
+				activeOperation = SharedClientData.selectedOperation.get().activate();
 				if (activeOperation == null) return;
 			}
 
@@ -237,7 +293,7 @@ public class ClientInputEvents {
 
 		if (PickerDolliesClient.MIRROR.get().isActiveAndMatches(key)) {
 			if (activeOperation == null) {
-				activeOperation = SharedClientData.getSelectedOperation().activate();
+				activeOperation = SharedClientData.selectedOperation.get().activate();
 				if (activeOperation == null) return;
 			}
 
@@ -328,11 +384,20 @@ public class ClientInputEvents {
 		var player = mc.player;
 		if (player == null) return;
 
+		var data = WorldClientData.getInstance();
+		if (data.quickFill != null) {
+			if (!WandItem.isOffHand() || data.quickFill.start.dimension() != player.level().dimension()) {
+				data.quickFill.cancel();
+			} else {
+				SharedClientData.selectedQuickFillShape.get().update(data.quickFill);
+				return;
+			}
+		}
+
 		var partialTicks = event.getPartialTick().getGameTimeDeltaPartialTick(false);
 		var dir = player.getViewVector(partialTicks);
 		var pos = player.getEyePosition(partialTicks);
 
-		var data = WorldClientData.getInstance();
 		if (data.dragState == null) return;
 
 		var dragState = data.dragState;
@@ -343,11 +408,11 @@ public class ClientInputEvents {
 		}
 
 		DebugRenderer.submitShape(new DebugRenderer.PointDebugShape(DebugRenderer.getPoseWorldToView(), dragState.origin, 0xffffff00));
-		var hit = Intersectiond.intersectRayPlane(new Vector3d(pos.x, pos.y, pos.z), new Vector3d(dir.x, dir.y, dir.z), dragState.origin, dragState.normal, partialTicks);
+		var hit = Intersectiond.intersectRayPlane(VectorUtil.vector3d(pos), VectorUtil.vector3d(dir), dragState.origin, dragState.normal, partialTicks);
 
 		if (hit == -1) return;
 
-		var newPosition = new Vector3d(dir.x, dir.y, dir.z).mul(hit).add(pos.x, pos.y, pos.z);
+		var newPosition = VectorUtil.vector3d(dir).mul(hit).add(pos.x, pos.y, pos.z);
 
 		var delta = newPosition.sub(dragState.lastPosition, new Vector3d());
 		var pose = new Matrix4d();
@@ -355,7 +420,7 @@ public class ClientInputEvents {
 		var deltaFloored = delta.get(RoundingMode.HALF_DOWN, new Vector3i());
 		if (deltaFloored.lengthSquared() == 0) return;
 
-		var worldDeltaFloored = pose.invert().transformDirection(new Vector3d(deltaFloored.x, deltaFloored.y, deltaFloored.z));
+		var worldDeltaFloored = pose.invert().transformDirection(VectorUtil.vector3d(deltaFloored));
 		dragState.lastPosition.add(worldDeltaFloored);
 
 		int amount;
@@ -380,7 +445,7 @@ public class ClientInputEvents {
 		if (dragState.target == null) {
 			data.selection.applyOffset(actualDirection.getNormal().multiply(amount));
 		} else {
-			dragState.target.move(new Vec3i(deltaFloored.x, deltaFloored.y, deltaFloored.z), actualDirection, amount);
+			dragState.target.move(VectorUtil.vec3i(deltaFloored), actualDirection, amount);
 		}
 	}
 

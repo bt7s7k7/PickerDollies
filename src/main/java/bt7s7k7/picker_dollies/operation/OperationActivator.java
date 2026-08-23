@@ -26,11 +26,11 @@ public interface OperationActivator {
 		return lookingAtSelection
 				? Component.translatable("gui.picker_dollies.start_operation_drag",
 						keyMappingToComponent(PickerDolliesClient.OPERATION_PICK),
-						Component.empty().append(SharedClientData.getSelectedOperation().getName()).withStyle(ChatFormatting.GOLD),
+						Component.empty().append(SharedClientData.selectedOperation.get().getName()).withStyle(ChatFormatting.GOLD),
 						keyMappingToComponent(PickerDolliesClient.ALTERNATE_INPUT))
 						.withStyle(ChatFormatting.GREEN)
 				: Component.translatable("gui.picker_dollies.start_operation",
-						Component.empty().append(SharedClientData.getSelectedOperation().getName()).withStyle(ChatFormatting.GOLD),
+						Component.empty().append(SharedClientData.selectedOperation.get().getName()).withStyle(ChatFormatting.GOLD),
 						keyMappingToComponent(PickerDolliesClient.ALTERNATE_INPUT))
 						.withStyle(ChatFormatting.GREEN);
 	}

@@ -3,8 +3,10 @@ package bt7s7k7.picker_dollies.data;
 import org.joml.Vector3d;
 
 import bt7s7k7.picker_dollies.operation.ActiveOperation;
+import bt7s7k7.picker_dollies.rendering.DebugRenderer;
 import bt7s7k7.picker_dollies.rendering.RenderedArea;
 import bt7s7k7.picker_dollies.rendering.SelectionRenderer;
+import bt7s7k7.picker_dollies.support.VectorUtil;
 import net.minecraft.core.Direction;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
@@ -70,7 +72,8 @@ public class DragState {
 
 		if (bestHit == null) return null;
 
-		var worldHitPosition = new Vector3d(bestHit.position()).add(playerPosition.x, playerPosition.y, playerPosition.z);
+		var worldHitPosition = VectorUtil.vector3d(playerPosition).add(bestHit.position());
+		DebugRenderer.submitShape(new DebugRenderer.LineDebugShape(DebugRenderer.getPoseWorldToView(), worldHitPosition, worldHitPosition.add(bestHit.normal(), new Vector3d()), 0xffff00ff));
 
 		if (!hitSelection && WorldClientData.getInstance().activeOperation == null) throw new NullPointerException();
 

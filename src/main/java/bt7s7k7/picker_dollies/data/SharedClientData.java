@@ -5,9 +5,11 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
 
 import bt7s7k7.picker_dollies.PickerDollies;
+import bt7s7k7.picker_dollies.data.QuickFillState.Shape;
 import bt7s7k7.picker_dollies.operation.AdjustSelectionOperation;
 import bt7s7k7.picker_dollies.operation.CloneOperation;
 import bt7s7k7.picker_dollies.operation.FillOperation;
@@ -72,38 +74,38 @@ public class SharedClientData {
 		saveStructureNow();
 	}
 
-	public static final List<OperationActivator> OPERATIONS = List.of(
-			MovementOperation.ACTIVATOR,
-			CloneOperation.ACTIVATOR,
-			AdjustSelectionOperation.ACTIVATOR,
-			FillOperation.ACTIVATOR,
-			StackOperation.ACTIVATOR);
-	private static int selectedOperationIdx = 0;
+	public static final ScrollSelectedValue<OperationActivator> selectedOperation = new ScrollSelectedValue<OperationActivator>() {
+		private final List<OperationActivator> OPERATIONS = List.of(
+				MovementOperation.ACTIVATOR,
+				CloneOperation.ACTIVATOR,
+				AdjustSelectionOperation.ACTIVATOR,
+				FillOperation.ACTIVATOR,
+				StackOperation.ACTIVATOR);
 
-	public static void selectNextOperation() {
-		selectedOperationIdx++;
-		if (selectedOperationIdx >= OPERATIONS.size()) {
-			selectedOperationIdx = 0;
+		@Override
+		public List<OperationActivator> getOptions() {
+			return this.OPERATIONS;
 		}
-	}
 
-	public static void selectPreviousOperation() {
-		selectedOperationIdx--;
-		if (selectedOperationIdx < 0) {
-			selectedOperationIdx = OPERATIONS.size() - 1;
+		@Override
+		public boolean canUse(OperationActivator value) {
+			return value.canActivate();
 		}
-	}
+	};
 
-	public static OperationActivator getSelectedOperation() {
-		while (true) {
-			// There should probably be a guard here against infinite loops, but there shouldn't be
-			// a case where there are no activatable operations, because MoveOperation is always
-			// activatable.
-
-			var operation = OPERATIONS.get(selectedOperationIdx);
-			if (operation.canActivate()) return operation;
-			selectNextOperation();
+	public static final ScrollSelectedValue<QuickFillState.Shape> selectedQuickFillShape = new ScrollSelectedValue<QuickFillState.Shape>() {
+		@Override
+		public List<Shape> getOptions() {
+			return Arrays.asList(QuickFillState.Shape.values());
 		}
-	}
 
+		@Override
+		public boolean canUse(Shape value) {
+			return true;
+		}
+	};
+
+	static {
+		selectedQuickFillShape.selectIfPossible(Shape.LEGACY);
+	}
 }

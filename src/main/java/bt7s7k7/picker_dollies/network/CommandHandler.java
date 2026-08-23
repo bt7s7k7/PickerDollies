@@ -8,11 +8,16 @@ import bt7s7k7.picker_dollies.data.ServerPlayerData;
 import bt7s7k7.picker_dollies.data.SharedClientData;
 import bt7s7k7.picker_dollies.data.StructureData;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.GlobalPos;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.level.BlockEvent;
+import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
@@ -115,19 +120,44 @@ public class CommandHandler {
 		registrar.commonToServer(FillCommand.TYPE, FillCommand.STREAM_CODEC, (payload, ctx) -> {
 			var selection = payload.target();
 
-			if (!canExecuteFreeOperation(ctx.player())) {
-				PickerDollies.LOGGER.error("Client tried ot execute FillCommand in survival but DISABLE_FREE_OPERATIONS_IN_SURVIVAL is enabled");
-				return;
-			}
-
 			if (!selection.isWithinLimits()) {
 				PickerDollies.LOGGER.error("Client tried ot execute FillCommand with a selection outside limits");
 				return;
 			}
 
-			var source = payload.source();
+			if (payload.source().isEmpty()) {
+				if (!ctx.player().isCreative()) {
+					selection.destroyBlocks();
+				} else {
+					selection.fillBlocks(Blocks.AIR.defaultBlockState());
+				}
+
+				return;
+			}
+
+			if (!canExecuteFreeOperation(ctx.player())) {
+				PickerDollies.LOGGER.error("Client tried ot execute FillCommand in survival but DISABLE_FREE_OPERATIONS_IN_SURVIVAL is enabled");
+				return;
+			}
+
+			var source = payload.source().get();
 			var sourceSelection = new Selection(source.dimension(), new BoundingBox(source.pos()));
 			var structure = sourceSelection.getStructure();
+
+			if (payload.isGentle()) {
+				// Do not replace existing blocks for quick fill
+				var level = selection.getLevel();
+
+				for (var pos : BlockPos.betweenClosed(selection.getPos(), selection.getPos().offset(selection.getSize()).offset(-1, -1, -1))) {
+					var existing = level.getBlockState(pos);
+					if (!existing.canBeReplaced()) continue;
+
+					var destination = new DestinationArea(selection.getDimension(), new BoundingBox(pos));
+					destination.applyStructure(structure, !ctx.player().isCreative());
+				}
+
+				return;
+			}
 
 			if (!ctx.player().isCreative()) {
 				selection.destroyBlocks();
@@ -161,6 +191,16 @@ public class CommandHandler {
 			ServerPlayerData.of(ctx.player()).structure = structure;
 			ctx.reply(new SelectionContentResponse(new StructureData(structure)));
 		});
+
+		registrar.commonToClient(BlockPlacedNotification.TYPE, BlockPlacedNotification.STREAM_CODEC, (payload, ctx) -> {
+			NeoForge.EVENT_BUS.post(payload);
+		});
+	}
+
+	@SubscribeEvent
+	public static void onBlockPlace(BlockEvent.EntityPlaceEvent event) {
+		if (!(event.getEntity() instanceof ServerPlayer player)) return;
+		PacketDistributor.sendToPlayer(player, new BlockPlacedNotification(new GlobalPos(player.level().dimension(), event.getPos())));
 	}
 
 	public static void register() {

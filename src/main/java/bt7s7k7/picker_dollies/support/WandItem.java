@@ -15,4 +15,12 @@ public final class WandItem {
 		var heldStack = Minecraft.getInstance().player.getMainHandItem();
 		return heldStack != null && BuiltInRegistries.ITEM.getKey(heldStack.getItem()).equals(wandItem);
 	}
+
+	public static boolean isOffHand() {
+		var wandItem = ResourceLocation.tryParse(Config.WAND_ITEM.get());
+		if (wandItem == null) return false;
+
+		var heldStack = Minecraft.getInstance().player.getOffhandItem();
+		return heldStack != null && BuiltInRegistries.ITEM.getKey(heldStack.getItem()).equals(wandItem);
+	}
 }

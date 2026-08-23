@@ -17,8 +17,9 @@ import bt7s7k7.picker_dollies.data.Area;
 import bt7s7k7.picker_dollies.data.DestinationArea;
 import bt7s7k7.picker_dollies.data.SharedClientData;
 import bt7s7k7.picker_dollies.data.WorldClientData;
+import bt7s7k7.picker_dollies.operation.ActiveOperation;
+import bt7s7k7.picker_dollies.support.LocalSpaceContext;
 import bt7s7k7.picker_dollies.support.Support;
-import dev.ryanhcode.sable.companion.SableCompanion;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.LightTexture;
@@ -29,7 +30,6 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.FastColor;
 import net.minecraft.util.Mth;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
@@ -49,27 +49,35 @@ public class SelectionRenderer {
 		if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES) {
 			if (!Config.SHOULD_RENDER_PREVIEW.getAsBoolean()) return;
 
-			var activeOperation = WorldClientData.getInstance().activeOperation;
-			if (activeOperation == null) return;
-
 			var renderBuffers = getRenderBuffers(event.getLevelRenderer());
-			renderOperationPreview(event.getPoseStack(), renderBuffers.bufferSource(), event.getCamera().getPosition());
+			renderOperationPreviews(event.getPoseStack(), renderBuffers.bufferSource(), event.getCamera().getPosition());
 		} else if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_TRIPWIRE_BLOCKS) {
 			var renderBuffers = getRenderBuffers(event.getLevelRenderer());
 			renderSelectionOutlines(event.getPoseStack(), renderBuffers.bufferSource(), event.getCamera().getPosition());
 		}
 	}
 
-	public static void renderOperationPreview(PoseStack poseStack, MultiBufferSource bufferSource, Vec3 cameraPosition) {
+	public static void renderOperationPreviews(PoseStack poseStack, MultiBufferSource bufferSource, Vec3 cameraPosition) {
 		var activeOperation = WorldClientData.getInstance().activeOperation;
+
+		var quickFill = WorldClientData.getInstance().quickFill;
+		if (quickFill != null && quickFill.structure != null && quickFill.isWithinLimits()) {
+			renderPreview(quickFill, quickFill.structure, poseStack, bufferSource, cameraPosition);
+		}
+
 		if (activeOperation == null) return;
 
+		var structure = SharedClientData.getStructure();
+		if (structure == null) return;
+
+		renderPreview(activeOperation, structure, poseStack, bufferSource, cameraPosition);
+	}
+
+	public static void renderPreview(ActiveOperation activeOperation, StructureTemplate structure, PoseStack poseStack, MultiBufferSource bufferSource, Vec3 cameraPosition) {
 		var mc = Minecraft.getInstance();
 		var player = mc.player;
 		if (player == null) return;
 		var level = player.level();
-		var structure = SharedClientData.getStructure();
-		if (structure == null) return;
 
 		for (var previewBox : Support.getIterable(activeOperation.getPreviewRenderPositions()::iterator)) {
 			var area = previewBox.area();
@@ -88,7 +96,7 @@ public class SelectionRenderer {
 			if (palettes.size() != 1) throw new IllegalStateException("Structure for SelectionRenderer does not have 1 palette but " + palettes.size());
 			var palette = palettes.getFirst();
 
-			var pose = getPose(level, rawPos, cameraPosition);
+			var pose = LocalSpaceContext.from(level, rawPos, cameraPosition).pose();
 
 			for (var blockInfo : palette.blocks()) {
 				var pos = blockInfo.pos();
@@ -106,19 +114,6 @@ public class SelectionRenderer {
 				poseStack.popPose();
 			}
 		}
-	}
-
-	private static Matrix4d getPose(Level level, BlockPos anchor, Vec3 cameraPosition) {
-		var pose = new Matrix4d();
-		pose.translate(new Vector3d(-cameraPosition.x, -cameraPosition.y, -cameraPosition.z));
-
-		var sublevel = SableCompanion.INSTANCE.getContaining(level, anchor);
-		if (sublevel != null) {
-			var posed = sublevel.logicalPose().bakeIntoMatrix(new Matrix4d());
-			pose.mul(posed);
-		}
-
-		return pose;
 	}
 
 	public static final List<RenderedArea> renderedActiveAreas = new ArrayList<>();
@@ -140,11 +135,11 @@ public class SelectionRenderer {
 		var maxY = boundingBox.maxY() + 1.0 + inflate;
 		var maxZ = boundingBox.maxZ() + 1.0 + inflate;
 
-		var pose = getPose(player.level(), area.getPos(), cameraPosition);
-		renderedActiveAreas.add(new RenderedArea(pose, minX, minY, minZ, maxX, maxY, maxZ));
+		var localSpace = LocalSpaceContext.from(player.level(), area.getPos(), cameraPosition);
+		renderedActiveAreas.add(new RenderedArea(localSpace, minX, minY, minZ, maxX, maxY, maxZ));
 
 		var outline = bufferSource.getBuffer(RenderType.debugLineStrip(1.0));
-		renderOutlineBox(pose, outline, minX, minY, minZ, maxX, maxY, maxZ, color);
+		renderOutlineBox(localSpace.pose(), outline, minX, minY, minZ, maxX, maxY, maxZ, color);
 
 		var time = (double) (System.nanoTime() / 1000) / 1000.0;
 		color = FastColor.ARGB32.color(Mth.floor((0.1f + 0.15f * (float) (Math.sin(time / 500) * 0.5 + 0.5)) * 255.0), color);
@@ -153,11 +148,11 @@ public class SelectionRenderer {
 		// This allows the player to see block intersections with the outer walls and also makes the
 		// box visible from the inside.
 		var filledBox = bufferSource.getBuffer(RenderType.debugFilledBox());
-		renderFilledBox(pose, filledBox,
+		renderFilledBox(localSpace.pose(), filledBox,
 				maxX, maxY, maxZ,
 				minX, minY, minZ,
 				color);
-		renderFilledBox(pose, filledBox,
+		renderFilledBox(localSpace.pose(), filledBox,
 				minX, minY, minZ,
 				maxX, maxY, maxZ,
 				color);
@@ -250,9 +245,13 @@ public class SelectionRenderer {
 			debugShape.render(bufferSource);
 		}
 
-		renderedActiveAreas.clear();
+		if (data.quickFill != null) {
+			renderSelectionOutline(poseStack, bufferSource, cameraPosition, data.quickFill, data.quickFill.isDestruction() || !data.quickFill.isWithinLimits() ? 0xffff0000 : 0xff00ff00, 0.01);
+		}
 
+		renderedActiveAreas.clear();
 		renderedSelection = null;
+
 		if (data.activeOperation == null || Config.SHOW_SELECTION_DURING_OPERATION.getAsBoolean()) {
 			renderSelectionOutline(poseStack, bufferSource, cameraPosition, selection, selectionColor, 0.01);
 

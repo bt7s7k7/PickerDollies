@@ -8,6 +8,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import bt7s7k7.picker_dollies.Config;
 import bt7s7k7.picker_dollies.PickerDollies;
 import io.netty.buffer.ByteBuf;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -23,6 +24,13 @@ public class Selection implements Area, Cloneable {
 	protected ResourceKey<Level> dimension = null;
 	protected BoundingBox bounds = null;
 
+	// This field is only used on the client only and therefore not included in the codec
+	protected GlobalPos startPos = null;
+
+	public GlobalPos getStartPos() {
+		return this.startPos;
+	}
+
 	@Override
 	public ResourceKey<Level> getDimension() {
 		if (this.dimension == null) throw new NullPointerException("Tried to get dimension of an inactive Selection");
@@ -36,6 +44,10 @@ public class Selection implements Area, Cloneable {
 	}
 
 	public Selection() {}
+
+	public Selection(Area area) {
+		this(area.getDimension(), area.getBounds());
+	}
 
 	public Selection(ResourceKey<Level> dimension, BoundingBox boundingBox) {
 		this.dimension = dimension;
@@ -54,15 +66,20 @@ public class Selection implements Area, Cloneable {
 	public void clear() {
 		this.dimension = null;
 		this.bounds = null;
+		this.startPos = null;
 	}
 
 	public Selection reset(GlobalPos start) {
-		return this.reset(start.dimension(), new BoundingBox(start.pos()));
+		this.dimension = start.dimension();
+		this.bounds = new BoundingBox(start.pos());
+		this.startPos = start;
+		return this;
 	}
 
 	public Selection reset(ResourceKey<Level> dimension, BoundingBox boundingBox) {
 		this.dimension = dimension;
 		this.bounds = boundingBox;
+		this.startPos = new GlobalPos(dimension, new BlockPos(boundingBox.minX(), boundingBox.minY(), boundingBox.minZ()));
 		return this;
 	}
 
@@ -108,18 +125,6 @@ public class Selection implements Area, Cloneable {
 		structure.fillFromWorld(level, this.getPos(), this.getSize(), Config.CLONE_ENTITIES.getAsBoolean(), Blocks.AIR);
 
 		return structure;
-	}
-
-	public boolean isWithinLimits() {
-		var maxBlocks = Config.MAX_BLOCKS.getAsInt();
-		// Check intermediates to prevent false positive due to overflow
-		var sizeX = this.bounds.getXSpan();
-		if (sizeX > maxBlocks) return false;
-		var sizeY = this.bounds.getYSpan();
-		if (sizeY > maxBlocks) return false;
-		var sizeZ = this.bounds.getZSpan();
-		if (sizeZ > maxBlocks) return false;
-		return sizeX * sizeY * sizeZ <= maxBlocks;
 	}
 
 	public static Codec<Selection> CODEC = RecordCodecBuilder.create(instance -> (instance.group(

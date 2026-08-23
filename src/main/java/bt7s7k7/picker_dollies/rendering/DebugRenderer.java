@@ -7,6 +7,7 @@ import org.joml.Matrix4d;
 import org.joml.Vector3d;
 import org.joml.Vector3f;
 
+import bt7s7k7.picker_dollies.support.VectorUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -27,11 +28,20 @@ public final class DebugRenderer {
 	}
 
 	public static void submitShapeAlways(DebugShape shape) {
-		if (flushed) debugShapes.clear();
+		if (flushed) {
+			flushed = false;
+			debugShapes.clear();
+		}
 		debugShapes.add(shape);
 	}
 
 	public static List<DebugShape> flush() {
+		if (flushed == true) {
+			flushed = false;
+			debugShapes.clear();
+			return debugShapes;
+		}
+
 		flushed = true;
 		return debugShapes;
 	}
@@ -39,7 +49,7 @@ public final class DebugRenderer {
 	public static Matrix4d getPoseWorldToView() {
 		var mc = Minecraft.getInstance();
 		var cameraPosition = mc.gameRenderer.getMainCamera().getPosition();
-		var pose = new Matrix4d().translate(new Vector3d(-cameraPosition.x, -cameraPosition.y, -cameraPosition.z));
+		var pose = new Matrix4d().translate(VectorUtil.vector3d(cameraPosition).mul(-1.0));
 		return pose;
 	}
 

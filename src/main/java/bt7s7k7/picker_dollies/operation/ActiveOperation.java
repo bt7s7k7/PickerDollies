@@ -46,4 +46,55 @@ public interface ActiveOperation {
 	public void applyMirror(Mirror mirror);
 
 	public void applyRotation(Rotation rotation);
+
+	public static abstract class Readonly implements ActiveOperation {
+
+		@Override
+		public boolean supportsMoveTo() {
+			return false;
+		}
+
+		@Override
+		public boolean supportsMove() {
+			return false;
+		}
+
+		@Override
+		public Rotation getRotation() {
+			return Rotation.NONE;
+		}
+
+		@Override
+		public Stream<Component> getHelpMessage() {
+			return Stream.empty();
+		}
+
+		@Override
+		public void cancel() {}
+
+		@Override
+		public void move(Vec3i offset, Direction direction, int amount) {}
+
+		@Override
+		public void moveTo(GlobalPos globalPos) {}
+
+		@Override
+		public void apply() {}
+
+		@Override
+		public Stream<DestinationBox> getDestinationBoxes() {
+			return Stream.empty();
+		}
+
+		@Override
+		public Stream<PreviewBox> getPreviewRenderPositions() {
+			return Stream.empty();
+		}
+
+		@Override
+		public void applyMirror(Mirror mirror) {}
+
+		@Override
+		public void applyRotation(Rotation rotation) {}
+	}
 }

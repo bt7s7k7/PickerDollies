@@ -3,6 +3,7 @@ package bt7s7k7.picker_dollies.data;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
+import bt7s7k7.picker_dollies.support.VectorUtil;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
@@ -106,8 +107,8 @@ public class DestinationArea implements Area {
 
 	@Override
 	public BoundingBox getBounds() {
-		var originalPos = new BlockPos(this.bounds.minX(), this.bounds.minY(), this.bounds.minZ());
-		var originalSize = new Vec3i(this.bounds.getXSpan(), this.bounds.getYSpan(), this.bounds.getZSpan());
+		var originalPos = VectorUtil.blockPosMin(this.bounds);
+		var originalSize = VectorUtil.vec3iSize(this.bounds);
 		var originalEnd = originalPos.offset(originalSize).offset(-1, -1, -1);
 
 		var start = transformPositionAccordingToMirrorAndRotate(originalPos, originalPos, originalSize, this.rotation, this.mirror);

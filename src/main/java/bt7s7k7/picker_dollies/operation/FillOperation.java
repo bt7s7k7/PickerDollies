@@ -95,7 +95,7 @@ public class FillOperation implements ActiveOperation {
 			var target = LookingUtil.getTargetedBlock(player, false);
 
 			if (target != null) {
-				PacketDistributor.sendToServer(new FillCommand(WorldClientData.getInstance().selection.clone(), target));
+				PacketDistributor.sendToServer(new FillCommand(WorldClientData.getInstance().selection.clone(), target, false));
 			}
 
 			return null;

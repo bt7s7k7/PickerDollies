@@ -12,7 +12,8 @@ public class WorldClientData {
 	private WorldClientData() {}
 
 	public final Selection selection = new Selection();
-	public ActiveOperation activeOperation;
+	public ActiveOperation activeOperation = null;
+	public QuickFillState quickFill = null;
 
 	public DragState dragState;
 

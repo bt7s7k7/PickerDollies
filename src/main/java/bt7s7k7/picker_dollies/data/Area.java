@@ -1,6 +1,8 @@
 package bt7s7k7.picker_dollies.data;
 
+import bt7s7k7.picker_dollies.Config;
 import bt7s7k7.picker_dollies.PickerDollies;
+import bt7s7k7.picker_dollies.support.VectorUtil;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.resources.ResourceKey;
@@ -45,12 +47,12 @@ public interface Area {
 
 	public default BlockPos getPos() {
 		var bounds = this.getBounds();
-		return new BlockPos(bounds.minX(), bounds.minY(), bounds.minZ());
+		return VectorUtil.blockPosMin(bounds);
 	}
 
 	public default Vec3i getSize() {
 		var bounds = this.getBounds();
-		return new Vec3i(bounds.getXSpan(), bounds.getYSpan(), bounds.getZSpan());
+		return VectorUtil.vec3iSize(bounds);
 	}
 
 	public default ServerLevel getLevel() {
@@ -94,5 +96,18 @@ public interface Area {
 		for (var pos : BlockPos.betweenClosed(this.getPos(), this.getPos().offset(this.getSize()).offset(-1, -1, -1))) {
 			level.setBlock(pos, blockState, Block.UPDATE_ALL);
 		}
+	}
+
+	public default boolean isWithinLimits() {
+		var maxBlocks = Config.MAX_BLOCKS.getAsInt();
+		// Check intermediates to prevent false positive due to overflow
+		var bounds = this.getBounds();
+		var sizeX = bounds.getXSpan();
+		if (sizeX > maxBlocks) return false;
+		var sizeY = bounds.getYSpan();
+		if (sizeY > maxBlocks) return false;
+		var sizeZ = bounds.getZSpan();
+		if (sizeZ > maxBlocks) return false;
+		return sizeX * sizeY * sizeZ <= maxBlocks;
 	}
 }

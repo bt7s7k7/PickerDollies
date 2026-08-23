@@ -12,7 +12,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
-import net.minecraft.world.phys.Vec3;
 
 public final class LookingUtil {
 	private LookingUtil() {}
@@ -37,11 +36,7 @@ public final class LookingUtil {
 
 	public static Direction getPlayerDirection(GlobalPos anchor) {
 		var player = Minecraft.getInstance().player;
-		return LookingUtil.getDirectionFromVector(player.getForward(), player.level(), anchor);
-	}
-
-	public static Direction getDirectionFromVector(Vec3 forward, Level level, GlobalPos anchor) {
-		return LookingUtil.getDirectionFromVector(new Vector3d(forward.x, forward.y, forward.z), level, anchor);
+		return LookingUtil.getDirectionFromVector(VectorUtil.vector3d(player.getForward()), player.level(), anchor);
 	}
 
 	public static Direction getDirectionFromVector(Vector3d forward, Level level, GlobalPos anchor) {
