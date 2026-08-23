@@ -1,10 +1,7 @@
-package bt7s7k7.picker_dollies.interaction;
+package bt7s7k7.picker_dollies.rendering;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.joml.Matrix4d;
 import org.joml.Matrix4f;
@@ -16,9 +13,11 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import bt7s7k7.picker_dollies.Config;
 import bt7s7k7.picker_dollies.PickerDollies;
-import bt7s7k7.picker_dollies.Support;
+import bt7s7k7.picker_dollies.data.Area;
+import bt7s7k7.picker_dollies.data.DestinationArea;
 import bt7s7k7.picker_dollies.data.SharedClientData;
 import bt7s7k7.picker_dollies.data.WorldClientData;
+import bt7s7k7.picker_dollies.support.Support;
 import dev.ryanhcode.sable.companion.SableCompanion;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
@@ -28,12 +27,10 @@ import net.minecraft.client.renderer.RenderBuffers;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.util.FastColor;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -43,7 +40,7 @@ import net.neoforged.neoforge.client.model.data.ModelData;
 
 @EventBusSubscriber(modid = PickerDollies.MODID, value = Dist.CLIENT)
 public class SelectionRenderer {
-	public static RenderBuffers getRenderBuffers(LevelRenderer renderer) {
+	private static RenderBuffers getRenderBuffers(LevelRenderer renderer) {
 		return (RenderBuffers) Support.getField(renderer, "renderBuffers", LevelRenderer.class);
 	}
 
@@ -111,7 +108,7 @@ public class SelectionRenderer {
 		}
 	}
 
-	public static Matrix4d getPose(Level level, BlockPos anchor, Vec3 cameraPosition) {
+	private static Matrix4d getPose(Level level, BlockPos anchor, Vec3 cameraPosition) {
 		var pose = new Matrix4d();
 		pose.translate(new Vector3d(-cameraPosition.x, -cameraPosition.y, -cameraPosition.z));
 
@@ -124,100 +121,8 @@ public class SelectionRenderer {
 		return pose;
 	}
 
-	public static record RenderedArea(Matrix4d pose, double minX, double minY, double minZ, double maxX, double maxY, double maxZ) {
-		public static record HitResult(Vector3d position, Vector3d normal, Direction primaryDirection, Direction secondaryDirection) {};
-
-		public HitResult clip(Vec3 start, Vec3 dir, double hitDistance) {
-			var aabb = new AABB(this.minX, this.minY, this.minZ, this.maxX, this.maxY, this.maxZ);
-			var inversePose = this.pose.invert(new Matrix4d());
-
-			var localStart = inversePose.transformPosition(new Vector3d(start.x, start.y, start.z));
-			var localDir = inversePose.transformDirection(new Vector3d(dir.x, dir.y, dir.z));
-			var localEnd = new Vector3d(localDir).mul(hitDistance).add(localStart);
-			var hit = AABB.clip(List.of(aabb), new Vec3(localStart.x, localStart.y, localStart.z), new Vec3(localEnd.x, localEnd.y, localEnd.z), BlockPos.ZERO);
-
-			// debugShapes.add(new PointDebugShape(this.pose, localStart, 0xff00ff00));
-			// debugShapes.add(new PointDebugShape(this.pose, localEnd, 0xffff0000));
-
-			if (hit == null) return null;
-
-			var localHitPosition = hit.getLocation();
-			var localHitNormal = hit.getDirection().getNormal();
-
-			var normalDirection = hit.getDirection();
-			var anchor = new Vector3d(this.minX, this.minY, this.minZ)
-					.add(this.maxX, this.maxY, this.maxZ)
-					.mul(0.5)
-					.add(localHitNormal.getX(), localHitNormal.getY(), localHitNormal.getZ());
-
-			var approxPrimary = new Vector3d(localHitPosition.x, localHitPosition.y, localHitPosition.z).sub(anchor).normalize();
-
-			var directions = Arrays.stream(Direction.values())
-					.filter(v -> v != normalDirection && v != normalDirection.getOpposite())
-					.collect(Collectors.toList());
-
-			var dotProducts = directions.stream()
-					.map(v -> new Vector3d(v.getNormal().getX(), v.getNormal().getY(), v.getNormal().getZ()).dot(approxPrimary))
-					.collect(Collectors.toList());
-
-			var primaryDirectionIdx = dotProducts.indexOf(Collections.max(dotProducts));
-			var primaryDirection = directions.get(primaryDirectionIdx);
-
-			dotProducts.remove(primaryDirectionIdx);
-			directions.remove(primaryDirectionIdx);
-
-			var primaryDirectionOpposite = primaryDirection.getOpposite();
-			var primaryDirectionOppositeIdx = directions.indexOf(primaryDirectionOpposite);
-
-			dotProducts.remove(primaryDirectionOppositeIdx);
-			directions.remove(primaryDirectionOppositeIdx);
-
-			var secondaryDirectionIdx = dotProducts.indexOf(Collections.max(dotProducts));
-			var secondaryDirection = directions.get(secondaryDirectionIdx);
-
-			// debugShapes.add(new PointDebugShape(this.pose, new Vector3d(localHitPosition.x, localHitPosition.y, localHitPosition.z), 0xffff00ff));
-
-			var hitPosition = this.pose.transformPosition(new Vector3d(localHitPosition.x, localHitPosition.y, localHitPosition.z));
-			var hitNormal = this.pose.transformDirection(new Vector3d(localHitNormal.getX(), localHitNormal.getY(), localHitNormal.getZ()));
-
-			return new HitResult(hitPosition, hitNormal, primaryDirection, secondaryDirection);
-		}
-	};
-
 	public static final List<RenderedArea> renderedActiveAreas = new ArrayList<>();
 	public static RenderedArea renderedSelection = null;
-
-	public interface DebugShape {
-		public void render(MultiBufferSource bufferSource);
-
-		public static Matrix4d getPoseWorldToView() {
-			var mc = Minecraft.getInstance();
-			var cameraPosition = mc.gameRenderer.getMainCamera().getPosition();
-			var pose = new Matrix4d().translate(new Vector3d(-cameraPosition.x, -cameraPosition.y, -cameraPosition.z));
-			return pose;
-		}
-	}
-
-	public static record LineDebugShape(Matrix4d pose, Vector3d from, Vector3d to, int color) implements DebugShape {
-		@Override
-		public void render(MultiBufferSource bufferSource) {
-			var consumer = bufferSource.getBuffer(RenderType.debugLineStrip(1.0));
-			var v3 = new Vector3f();
-			var v3d = new Vector3d();
-			consumer.addVertex(v3.set(this.pose.transformPosition(v3d.set(this.from)))).setColor(this.color);
-			consumer.addVertex(v3.set(this.pose.transformPosition(v3d.set(this.to)))).setColor(this.color);
-		}
-	};
-
-	public static record PointDebugShape(Matrix4d pose, Vector3d point, int color) implements DebugShape {
-		@Override
-		public void render(MultiBufferSource bufferSource) {
-			var consumer = bufferSource.getBuffer(RenderType.debugLineStrip(1.0));
-			renderOutlineBox(this.pose, consumer, this.point.x - 0.1, this.point.y - 0.1, this.point.z - 0.1, this.point.x + 0.1, this.point.y + 0.1, this.point.z + 0.1, this.color);
-		}
-	}
-
-	public static final List<DebugShape> debugShapes = new ArrayList<>();
 
 	public static void renderSelectionOutline(PoseStack poseStack, MultiBufferSource bufferSource, Vec3 cameraPosition, Area area, int color, double inflate) {
 		if (area == null) return;
@@ -258,7 +163,7 @@ public class SelectionRenderer {
 				color);
 	}
 
-	private static void renderOutlineBox(
+	static void renderOutlineBox(
 			Matrix4d pose, VertexConsumer consumer,
 			double minX, double minY, double minZ,
 			double maxX, double maxY, double maxZ,
@@ -341,10 +246,9 @@ public class SelectionRenderer {
 			selectionColor = 0xffff0000;
 		}
 
-		for (var debugShape : debugShapes) {
+		for (var debugShape : DebugRenderer.flush()) {
 			debugShape.render(bufferSource);
 		}
-		debugShapes.clear();
 
 		renderedActiveAreas.clear();
 

@@ -2,11 +2,11 @@ package bt7s7k7.picker_dollies.network;
 
 import bt7s7k7.picker_dollies.Config;
 import bt7s7k7.picker_dollies.PickerDollies;
+import bt7s7k7.picker_dollies.data.DestinationArea;
+import bt7s7k7.picker_dollies.data.Selection;
 import bt7s7k7.picker_dollies.data.ServerPlayerData;
 import bt7s7k7.picker_dollies.data.SharedClientData;
 import bt7s7k7.picker_dollies.data.StructureData;
-import bt7s7k7.picker_dollies.interaction.DestinationArea;
-import bt7s7k7.picker_dollies.interaction.Selection;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;

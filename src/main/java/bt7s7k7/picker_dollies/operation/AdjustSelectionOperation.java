@@ -1,13 +1,13 @@
-package bt7s7k7.picker_dollies.interaction;
+package bt7s7k7.picker_dollies.operation;
 
 import static bt7s7k7.picker_dollies.PickerDolliesClient.keyMappingToComponent;
 
 import java.util.stream.Stream;
 
-import bt7s7k7.picker_dollies.ClientInputEvents;
 import bt7s7k7.picker_dollies.Config;
 import bt7s7k7.picker_dollies.PickerDolliesClient;
 import bt7s7k7.picker_dollies.data.WorldClientData;
+import bt7s7k7.picker_dollies.support.Messages;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
@@ -63,7 +63,7 @@ public class AdjustSelectionOperation implements ActiveOperation {
 								Component.translatable("gui.picker_dollies.hold_adjust_size",
 										keyMappingToComponent(PickerDolliesClient.ALTERNATE_INPUT))
 										.withStyle(PickerDolliesClient.ALTERNATE_INPUT.get().isDown() ? ChatFormatting.AQUA : ChatFormatting.BLUE)),
-						ClientInputEvents.baseOperationHelp()));
+						Messages.baseOperationHelp()));
 	}
 
 	@Override
@@ -92,8 +92,8 @@ public class AdjustSelectionOperation implements ActiveOperation {
 
 			if (size.getX() <= 0 || size.getY() <= 0 || size.getZ() <= 0) return;
 
-			selection.reset(new GlobalPos(selection.dimension, pos));
-			selection.expand(new GlobalPos(selection.dimension, pos.offset(size.offset(-1, -1, -1))));
+			selection.reset(new GlobalPos(selection.getDimension(), pos));
+			selection.expand(new GlobalPos(selection.getDimension(), pos.offset(size.offset(-1, -1, -1))));
 		} else {
 			selection.applyOffset(offset);
 		}

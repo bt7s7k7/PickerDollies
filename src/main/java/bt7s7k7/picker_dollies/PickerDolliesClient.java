@@ -5,7 +5,7 @@ import org.lwjgl.glfw.GLFW;
 import com.mojang.blaze3d.platform.InputConstants;
 
 import bt7s7k7.picker_dollies.data.WorldClientData;
-import bt7s7k7.picker_dollies.interaction.SelectionRenderer;
+import bt7s7k7.picker_dollies.rendering.SelectionRenderer;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.network.chat.Component;

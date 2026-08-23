@@ -1,7 +1,9 @@
-package bt7s7k7.picker_dollies.interaction;
+package bt7s7k7.picker_dollies.operation;
 
 import java.util.stream.Stream;
 
+import bt7s7k7.picker_dollies.data.Area;
+import bt7s7k7.picker_dollies.data.DestinationArea;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;

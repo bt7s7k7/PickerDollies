@@ -1,8 +1,8 @@
 package bt7s7k7.picker_dollies.network;
 
 import bt7s7k7.picker_dollies.PickerDollies;
-import bt7s7k7.picker_dollies.interaction.DestinationArea;
-import bt7s7k7.picker_dollies.interaction.Selection;
+import bt7s7k7.picker_dollies.data.DestinationArea;
+import bt7s7k7.picker_dollies.data.Selection;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;

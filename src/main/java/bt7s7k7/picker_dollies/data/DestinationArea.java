@@ -1,4 +1,4 @@
-package bt7s7k7.picker_dollies.interaction;
+package bt7s7k7.picker_dollies.data;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -39,6 +39,10 @@ public class DestinationArea implements Area {
 	// This field is only used client-side, so it is not part of the codec
 	protected Vec3i offset = Vec3i.ZERO;
 
+	public Vec3i getOffset() {
+		return this.offset;
+	}
+
 	public DestinationArea(ResourceKey<Level> dimension, BoundingBox boundingBox) {
 		this.dimension = dimension;
 		this.bounds = boundingBox;
@@ -71,23 +75,6 @@ public class DestinationArea implements Area {
 	}
 
 	public static BlockPos transformPositionAccordingToMirrorAndRotate(BlockPos pos, BlockPos origin, Vec3i size, Rotation rotation, Mirror mirror) {
-		// var halfSize = new Vec3i(
-		// Mth.floorDiv(size.getX(), 2),
-		// Mth.floorDiv(size.getY(), 2),
-		// Mth.floorDiv(size.getZ(), 2));
-		// var center = origin.offset(halfSize);
-		// var relativePos = pos.subtract(center);
-
-		// if (rotation == Rotation.CLOCKWISE_90) {
-		// relativePos = new BlockPos(relativePos.getZ() + 1, relativePos.getY(), -relativePos.getX() - 1);
-		// } else if (rotation == Rotation.COUNTERCLOCKWISE_90) {
-		// relativePos = new BlockPos(-relativePos.getZ() + 1, relativePos.getY(), relativePos.getX() - 1);
-		// } else if (rotation == Rotation.CLOCKWISE_180) {
-		// relativePos = new BlockPos(-relativePos.getX(), relativePos.getY(), -relativePos.getZ());
-		// }
-
-		// return center.offset(relativePos);
-
 		var rectSize = Math.max(size.getX(), size.getZ());
 		var start = origin.offset(
 				-((rectSize - size.getX()) / 2),

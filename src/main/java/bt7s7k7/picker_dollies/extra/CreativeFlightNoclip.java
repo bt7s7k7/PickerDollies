@@ -5,7 +5,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import bt7s7k7.picker_dollies.Config;
-import bt7s7k7.picker_dollies.Support;
+import bt7s7k7.picker_dollies.support.Support;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.player.LocalPlayer;

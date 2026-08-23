@@ -1,4 +1,4 @@
-package bt7s7k7.picker_dollies.interaction;
+package bt7s7k7.picker_dollies.data;
 
 import java.util.List;
 

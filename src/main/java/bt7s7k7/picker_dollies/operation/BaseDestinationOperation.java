@@ -1,9 +1,11 @@
-package bt7s7k7.picker_dollies.interaction;
+package bt7s7k7.picker_dollies.operation;
 
 import java.util.stream.Stream;
 
-import bt7s7k7.picker_dollies.ClientInputEvents;
+import bt7s7k7.picker_dollies.data.DestinationArea;
+import bt7s7k7.picker_dollies.data.Selection;
 import bt7s7k7.picker_dollies.data.WorldClientData;
+import bt7s7k7.picker_dollies.support.Messages;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
@@ -38,22 +40,22 @@ public abstract class BaseDestinationOperation implements ActiveOperation {
 	@Override
 	public Stream<Component> getHelpMessage() {
 		return Stream.concat(Stream.of(Component.translatable("gui.picker_dollies.move_state",
-				Component.literal("" + this.destination.offset.getX()).withStyle(ChatFormatting.GOLD),
-				Component.literal("" + this.destination.offset.getY()).withStyle(ChatFormatting.GOLD),
-				Component.literal("" + this.destination.offset.getZ()).withStyle(ChatFormatting.GOLD),
+				Component.literal("" + this.destination.getOffset().getX()).withStyle(ChatFormatting.GOLD),
+				Component.literal("" + this.destination.getOffset().getY()).withStyle(ChatFormatting.GOLD),
+				Component.literal("" + this.destination.getOffset().getZ()).withStyle(ChatFormatting.GOLD),
 				Component.empty().append(this.destination.getMirror().symbol()).withStyle(ChatFormatting.GOLD),
 				Component.literal(this.destination.getRotationAngle()).withStyle(ChatFormatting.GOLD)).withStyle(ChatFormatting.YELLOW)),
-				ClientInputEvents.baseOperationHelp());
+				Messages.baseOperationHelp());
 	}
 
 	@Override
 	public GlobalPos getAnchor() {
-		return new GlobalPos(this.destination.dimension, this.destination.getPos());
+		return new GlobalPos(this.destination.getDimension(), this.destination.getPos());
 	}
 
 	@Override
 	public Rotation getRotation() {
-		return this.destination.rotation;
+		return this.destination.getRotation();
 	}
 
 	@Override

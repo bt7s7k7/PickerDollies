@@ -1,41 +1,38 @@
-package bt7s7k7.picker_dollies.interaction;
+package bt7s7k7.picker_dollies.operation;
 
 import bt7s7k7.picker_dollies.Config;
+import bt7s7k7.picker_dollies.data.DestinationArea;
+import bt7s7k7.picker_dollies.data.Selection;
 import bt7s7k7.picker_dollies.data.SharedClientData;
 import bt7s7k7.picker_dollies.data.WorldClientData;
 import bt7s7k7.picker_dollies.network.CopyCommand;
-import bt7s7k7.picker_dollies.network.MovementCommand;
+import bt7s7k7.picker_dollies.network.StampCommand;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.network.PacketDistributor;
 
-public class MovementOperation extends BaseDestinationOperation {
-	public Selection source;
-
-	public MovementOperation(Selection source, DestinationArea destination) {
+public class CloneOperation extends BaseDestinationOperation {
+	public CloneOperation(DestinationArea destination) {
 		super(destination);
-		this.source = source;
 	}
 
-	public MovementOperation(Selection source) {
+	public CloneOperation(Selection source) {
 		super(source);
-		this.source = source;
 	}
 
 	@Override
 	public int getColor() {
-		return 0xffffff00;
+		return 0xff00ff00;
 	}
 
 	@Override
 	public void apply() {
-		PacketDistributor.sendToServer(new MovementCommand(this.source.clone(), this.destination));
-		var data = WorldClientData.getInstance();
-		data.activeOperation = null;
+		PacketDistributor.sendToServer(new StampCommand(this.destination));
 
-		if (Config.MOVE_CONTINUE.getAsBoolean()) {
-			data.selection.reset(this.destination.dimension, this.destination.bounds);
-		} else {
-			data.selection.clear();
+		var data = WorldClientData.getInstance();
+
+		if (!Config.CLONE_CONTINUE.getAsBoolean()) {
+			data.activeOperation = null;
 		}
 	}
 
@@ -43,7 +40,7 @@ public class MovementOperation extends BaseDestinationOperation {
 		@Override
 		public ActiveOperation activate() {
 			var data = WorldClientData.getInstance();
-			var operation = new MovementOperation(data.selection);
+			var operation = new CloneOperation(data.selection);
 			data.activeOperation = operation;
 
 			// Reset the structure to remove potentially stale data that would be displayed until we get a response from the server
@@ -65,7 +62,12 @@ public class MovementOperation extends BaseDestinationOperation {
 
 		@Override
 		public Component getName() {
-			return Component.translatable("operation.picker_dollies.move");
+			return Component.translatable("operation.picker_dollies.clone");
+		}
+
+		@Override
+		public boolean canActivate(Player player) {
+			return !Config.DISABLE_FREE_OPERATIONS_IN_SURVIVAL.getAsBoolean() || player.isCreative();
 		}
 	};
 }

@@ -1,13 +1,13 @@
-package bt7s7k7.picker_dollies.interaction;
+package bt7s7k7.picker_dollies.operation;
 
 import static bt7s7k7.picker_dollies.PickerDolliesClient.keyMappingToComponent;
 
 import java.util.stream.Stream;
 
-import bt7s7k7.picker_dollies.ClientInputEvents;
 import bt7s7k7.picker_dollies.PickerDolliesClient;
 import bt7s7k7.picker_dollies.data.WorldClientData;
 import bt7s7k7.picker_dollies.network.FillCommand;
+import bt7s7k7.picker_dollies.support.LookingUtil;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.Direction;
@@ -92,7 +92,7 @@ public class FillOperation implements ActiveOperation {
 		public ActiveOperation activate() {
 			var mc = Minecraft.getInstance();
 			var player = mc.player;
-			var target = ClientInputEvents.getTargetedBlock(player, false);
+			var target = LookingUtil.getTargetedBlock(player, false);
 
 			if (target != null) {
 				PacketDistributor.sendToServer(new FillCommand(WorldClientData.getInstance().selection.clone(), target));
@@ -128,7 +128,7 @@ public class FillOperation implements ActiveOperation {
 
 		@Override
 		public Component getStartMessage(boolean lookingAtSelection) {
-			var target = ClientInputEvents.getTargetedBlock(Minecraft.getInstance().player, false);
+			var target = LookingUtil.getTargetedBlock(Minecraft.getInstance().player, false);
 			if (target == null) return Component.translatable("gui.picker_dollies.fill_with_target_hint").withStyle(ChatFormatting.DARK_GREEN);
 			return Component.translatable("gui.picker_dollies.fill_with_target", keyMappingToComponent(PickerDolliesClient.OPERATION_PICK)).withStyle(ChatFormatting.GREEN);
 		};

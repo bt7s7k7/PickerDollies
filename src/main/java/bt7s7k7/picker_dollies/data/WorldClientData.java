@@ -1,8 +1,7 @@
 package bt7s7k7.picker_dollies.data;
 
 import bt7s7k7.picker_dollies.PickerDollies;
-import bt7s7k7.picker_dollies.interaction.ActiveOperation;
-import bt7s7k7.picker_dollies.interaction.Selection;
+import bt7s7k7.picker_dollies.operation.ActiveOperation;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
