@@ -198,6 +198,9 @@ public class ClientInputEvents {
 		if (PickerDolliesClient.OPERATION_PICK.get().isActiveAndMatches(key)) {
 			if (event != null) event.setCanceled(true);
 
+			var selection = WorldClientData.getInstance().selection;
+			if (!selection.isActive()) return;
+
 			var newDrag = DragState.tryStart(player);
 			var target = LookingUtil.getTargetedBlock(player, true);
 
