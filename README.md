@@ -20,6 +20,7 @@ The motivation for this work is the incompatibility between Axiom build tools an
 
 ### Extra functionality
 
+  - **Quick place and break:** Fill or clear large areas with only two clicks
   - **Creative flight noclip:** Allows creative players to phase thought blocks during flight as if they were in spectator
 
 # Guide
@@ -98,20 +99,6 @@ You can interact with the clipboard using these client side commands:
   - `/picker clipboard load`: Reloads the clipboard from disk
   - `/picker clipboard save`: Overwrites the structure file on disk
 
-## Adjust Selection Operation
-
-![GIF showing moving a selection both with the scroll wheel and by dragging in sequence](https://raw.githubusercontent.com/bt7s7k7/PickerDollies/refs/heads/master/docs/adjust_selection.webp)
-
-This operation allows to move and resize your selection without having to click on any blocks. While this operation is active, you can move your selection as you would move a structure with the **Move Operation**. 
-
-### Resizing the selection
-
-You can resize the selection by holding <kbd>X</kbd>. When scrolling, you will move the face of the bounding box opposite of you in the axis as determined by your camera angle.
-
-![GIF showing resizing the selection by dragging](https://raw.githubusercontent.com/bt7s7k7/PickerDollies/refs/heads/master/docs/adjust_selection_adv.webp)
-
-When dragging, you will move the edge closest to your cursor in the plane of the face your have selected. 
-
 ## Fill Operation
 
 ![GIF showing filling a hole using the fill operation](https://raw.githubusercontent.com/bt7s7k7/PickerDollies/refs/heads/master/docs/fill.webp)
@@ -132,6 +119,38 @@ This operation is very complex and has still some UX problems. Using this operat
 ![GIF showing off creating a diagonal staircase using the stack operation](https://raw.githubusercontent.com/bt7s7k7/PickerDollies/refs/heads/master/docs/stack_diagonal.webp)
 
 You can adjust the gaps or offsets between created structures by holding <kbd>X</kbd>.
+
+## Adjusting the selection
+
+![GIF showing moving a selection both with the scroll wheel and by dragging in sequence](https://raw.githubusercontent.com/bt7s7k7/PickerDollies/refs/heads/master/docs/adjust_selection.webp)
+
+By pressing <kbd>Left Shift</kbd>, you can adjust you selection, moving and resizing it without the need for supporting blocks or even through walls.
+
+### Resizing the selection
+
+You can resize the selection by holding <kbd>X</kbd>. When scrolling, you will move the face of the bounding box opposite of you in the axis as determined by your camera angle.
+
+![GIF showing resizing the selection by dragging](https://raw.githubusercontent.com/bt7s7k7/PickerDollies/refs/heads/master/docs/adjust_selection_adv.webp)
+
+When dragging, you will move the edge closest to your cursor in the plane of the face your have selected. 
+
+## Quick place and break
+
+By putting the **wand item** in your offhand you can quickly fill or clear large areas. By placing a block, you can fill a whole area with that block or, by breaking a block, you can destroy a whole area.
+
+![GIF showing building a simple building using quick place and break](https://raw.githubusercontent.com/bt7s7k7/PickerDollies/refs/heads/master/docs/quick_fill.webp)
+
+Unlike other operations, quick place will not overwrite existing blocks (with the exception of replaceable blocks, like grass). The placed block will have the state (e.g. rotation, slab top/bottom) of the originally placed block. 
+
+When breaking, the destroyed area will be saved in your clipboard, so you can restore it in case of a mistake.
+
+The following shapes are available:
+
+  - **Legacy:** fills an area with the end point being a targeted block
+  - **Line:** fills a straight line in any cardinal axis
+  - **Wall:** 1 block thick in either the X or Z plane
+  - **Floor:** 1 block thick in the Y plane
+  - **Cube:** fills an area with the end point being a point in the air in front of the camera
 
 ## Creative flight noclip
 

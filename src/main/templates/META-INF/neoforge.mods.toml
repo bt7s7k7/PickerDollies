@@ -36,7 +36,7 @@ displayName="${mod_name}" #mandatory
 #displayURL="https://change.me.to.your.mods.homepage.example.invalid/" #optional
 
 # A file name (in the root of the mod JAR) containing a logo for display
-#logoFile="examplemod.png" #optional
+logoFile="logo.png" #optional
 
 # A text field displayed in the mod UI
 #credits="" #optional
@@ -46,7 +46,9 @@ authors="bt7s7k7"
 
 # The description text for the mod (multi line!) (#mandatory)
 description='''
-Move structures quickly and easily. Inspired by the Factorio mod of the same name and Axiom build tools.
+Streamline your building workflow with quick and easy structure moving and cloning,
+filling and clearing of large areas, and a persistent clipboard. With a focus on
+mod compatibility, including Sable and Aeronautics.
 '''
 
 # The [[mixins]] block allows you to declare your mixin config to FML so that it gets loaded.
