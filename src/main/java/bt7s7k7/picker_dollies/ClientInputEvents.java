@@ -19,6 +19,7 @@ import bt7s7k7.picker_dollies.network.BlockPlacedNotification;
 import bt7s7k7.picker_dollies.network.CopyCommand;
 import bt7s7k7.picker_dollies.network.CutCommand;
 import bt7s7k7.picker_dollies.network.PasteCommand;
+import bt7s7k7.picker_dollies.operation.AdjustSelectionOperation;
 import bt7s7k7.picker_dollies.operation.CloneOperation;
 import bt7s7k7.picker_dollies.rendering.DebugRenderer;
 import bt7s7k7.picker_dollies.support.LookingUtil;
@@ -385,6 +386,14 @@ public class ClientInputEvents {
 		if (player == null) return;
 
 		var data = WorldClientData.getInstance();
+
+		var shouldAdjustSelection = PickerDolliesClient.ADJUST_SELECTION.get().isDown();
+		if (shouldAdjustSelection && WandItem.inMainHand() && data.selection.isActive() && data.activeOperation == null) {
+			data.activeOperation = new AdjustSelectionOperation();
+		} else if (!shouldAdjustSelection && data.activeOperation instanceof AdjustSelectionOperation adjustSelectionOperation) {
+			adjustSelectionOperation.cancel();
+		}
+
 		if (data.quickFill != null) {
 			if (!WandItem.isOffHand() || data.quickFill.start.dimension() != player.level().dimension()) {
 				data.quickFill.cancel();

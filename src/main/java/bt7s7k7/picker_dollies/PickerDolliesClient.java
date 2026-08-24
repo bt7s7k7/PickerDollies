@@ -50,6 +50,12 @@ public class PickerDolliesClient {
 			GLFW.GLFW_KEY_X,
 			"key.categories.picker_dollies.picker_dollies"));
 
+	public static final Lazy<KeyMapping> ADJUST_SELECTION = Lazy.of(() -> new KeyMapping(
+			"key.picker_dollies.adjust_selection",
+			InputConstants.Type.KEYSYM,
+			GLFW.GLFW_KEY_LEFT_SHIFT,
+			"key.categories.picker_dollies.picker_dollies"));
+
 	public static final Lazy<KeyMapping> ROTATE = Lazy.of(() -> new KeyMapping(
 			"key.picker_dollies.rotate",
 			InputConstants.Type.KEYSYM,
@@ -103,6 +109,7 @@ public class PickerDolliesClient {
 		event.register(CANCEL_OPERATION.get());
 		event.register(OPERATION_PICK.get());
 		event.register(ALTERNATE_INPUT.get());
+		event.register(ADJUST_SELECTION.get());
 		event.register(ROTATE.get());
 		event.register(MIRROR.get());
 		event.register(CUT.get());

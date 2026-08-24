@@ -47,6 +47,9 @@ public final class Messages {
 						keyMappingToComponent(PickerDolliesClient.COPY),
 						keyMappingToComponent(PickerDolliesClient.CUT))
 						.withStyle(ChatFormatting.GRAY),
+				Component.translatable("gui.picker_dollies.adjust_selection",
+						keyMappingToComponent(PickerDolliesClient.ADJUST_SELECTION))
+						.withStyle(ChatFormatting.GRAY),
 				selectedOperation.getStartMessage(hitSelection));
 	}
 

@@ -7,7 +7,6 @@ import java.util.stream.Stream;
 import bt7s7k7.picker_dollies.Config;
 import bt7s7k7.picker_dollies.PickerDolliesClient;
 import bt7s7k7.picker_dollies.data.WorldClientData;
-import bt7s7k7.picker_dollies.support.Messages;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
@@ -51,19 +50,19 @@ public class AdjustSelectionOperation implements ActiveOperation {
 		var sizeY = selection.getBounds().getYSpan();
 		var sizeZ = selection.getBounds().getZSpan();
 
-		return Stream.concat(
+		return Stream.of(
 				selection.isWithinLimits()
-						? Stream.of(Component.translatable("gui.picker_dollies.selection",
+						? Component.translatable("gui.picker_dollies.selection",
 								Component.literal("" + sizeX).withStyle(ChatFormatting.GOLD),
 								Component.literal("" + sizeY).withStyle(ChatFormatting.GOLD),
-								Component.literal("" + sizeZ).withStyle(ChatFormatting.GOLD)).withStyle(ChatFormatting.AQUA))
-						: Stream.of(Component.translatable("gui.picker_dollies.selection_too_large", Component.literal("" + Config.MAX_BLOCKS.getAsInt())).withStyle(ChatFormatting.RED)),
-				Stream.concat(
-						Stream.of(
-								Component.translatable("gui.picker_dollies.hold_adjust_size",
-										keyMappingToComponent(PickerDolliesClient.ALTERNATE_INPUT))
-										.withStyle(PickerDolliesClient.ALTERNATE_INPUT.get().isDown() ? ChatFormatting.AQUA : ChatFormatting.BLUE)),
-						Messages.baseOperationHelp()));
+								Component.literal("" + sizeZ).withStyle(ChatFormatting.GOLD)).withStyle(ChatFormatting.AQUA)
+						: Component.translatable("gui.picker_dollies.selection_too_large", Component.literal("" + Config.MAX_BLOCKS.getAsInt())).withStyle(ChatFormatting.RED),
+				Component.translatable("gui.picker_dollies.hold_adjust_size",
+						keyMappingToComponent(PickerDolliesClient.ALTERNATE_INPUT))
+						.withStyle(PickerDolliesClient.ALTERNATE_INPUT.get().isDown() ? ChatFormatting.AQUA : ChatFormatting.BLUE),
+				Component.translatable("gui.picker_dollies.adjust_selection_help",
+						keyMappingToComponent(PickerDolliesClient.OPERATION_PICK))
+						.withStyle(ChatFormatting.GREEN));
 	}
 
 	@Override
@@ -128,26 +127,4 @@ public class AdjustSelectionOperation implements ActiveOperation {
 	public void applyRotation(Rotation rotation) {
 		// Not applicable
 	}
-
-	public static final OperationActivator ACTIVATOR = new OperationActivator() {
-		@Override
-		public ActiveOperation activate() {
-			return WorldClientData.getInstance().activeOperation = new AdjustSelectionOperation();
-		}
-
-		@Override
-		public Component getName() {
-			return Component.translatable("operation.picker_dollies.adjust_selection");
-		}
-
-		@Override
-		public boolean supportsMoveTo() {
-			return false;
-		}
-
-		@Override
-		public boolean supportsMove() {
-			return true;
-		}
-	};
 }

@@ -10,7 +10,6 @@ import java.util.List;
 
 import bt7s7k7.picker_dollies.PickerDollies;
 import bt7s7k7.picker_dollies.data.QuickFillState.Shape;
-import bt7s7k7.picker_dollies.operation.AdjustSelectionOperation;
 import bt7s7k7.picker_dollies.operation.CloneOperation;
 import bt7s7k7.picker_dollies.operation.FillOperation;
 import bt7s7k7.picker_dollies.operation.MovementOperation;
@@ -78,7 +77,6 @@ public class SharedClientData {
 		private final List<OperationActivator> OPERATIONS = List.of(
 				MovementOperation.ACTIVATOR,
 				CloneOperation.ACTIVATOR,
-				AdjustSelectionOperation.ACTIVATOR,
 				FillOperation.ACTIVATOR,
 				StackOperation.ACTIVATOR);
 
