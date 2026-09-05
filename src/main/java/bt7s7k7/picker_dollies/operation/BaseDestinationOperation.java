@@ -22,7 +22,7 @@ public abstract class BaseDestinationOperation implements ActiveOperation {
 	}
 
 	public BaseDestinationOperation(Selection source) {
-		this.destination = DestinationArea.from(source);
+		this.destination = new DestinationArea(source);
 	}
 
 	public abstract int getColor();

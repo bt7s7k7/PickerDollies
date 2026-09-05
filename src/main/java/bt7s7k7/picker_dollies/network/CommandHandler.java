@@ -7,6 +7,7 @@ import bt7s7k7.picker_dollies.data.Selection;
 import bt7s7k7.picker_dollies.data.ServerPlayerData;
 import bt7s7k7.picker_dollies.data.SharedClientData;
 import bt7s7k7.picker_dollies.data.StructureData;
+import bt7s7k7.picker_dollies.support.Support;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.server.level.ServerPlayer;
@@ -96,22 +97,23 @@ public class CommandHandler {
 			destination.applyStructure(structure, !ctx.player().isCreative());
 		});
 
-		registrar.commonToServer(StampManyCommand.TYPE, StampManyCommand.STREAM_CODEC, (payload, ctx) -> {
+		registrar.commonToServer(StackCommand.TYPE, StackCommand.STREAM_CODEC, (payload, ctx) -> {
 			var structure = ServerPlayerData.of(ctx.player()).structure;
 			if (structure == null) {
 				PickerDollies.LOGGER.error("Client tried ot execute StampManyCommand without a server-side structure");
 				return;
 			}
 
-			var destination = payload.to();
-			var positions = payload.positions();
+			var stack = payload.stack();
+			var destination = new DestinationArea(stack.getDimension(), stack.getBounds());
 
 			if (!canExecuteFreeOperation(ctx.player())) {
 				PickerDollies.LOGGER.error("Client tried ot execute StampManyCommand in survival but DISABLE_FREE_OPERATIONS_IN_SURVIVAL is enabled");
 				return;
 			}
 
-			for (var position : positions) {
+			var positions = stack.getDestinations();
+			for (var position : Support.getIterable(positions::iterator)) {
 				destination.setPos(position);
 				destination.applyStructure(structure, !ctx.player().isCreative());
 			}

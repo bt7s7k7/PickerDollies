@@ -37,16 +37,20 @@ public class DestinationArea implements Area {
 		this.rotation = rotation;
 	}
 
+	public DestinationArea(ResourceKey<Level> dimension, BoundingBox boundingBox) {
+		this.dimension = dimension;
+		this.bounds = boundingBox;
+	}
+
+	public DestinationArea(Area area) {
+		this(area.getDimension(), area.getBounds());
+	}
+
 	// This field is only used client-side, so it is not part of the codec
 	protected Vec3i offset = Vec3i.ZERO;
 
 	public Vec3i getOffset() {
 		return this.offset;
-	}
-
-	public DestinationArea(ResourceKey<Level> dimension, BoundingBox boundingBox) {
-		this.dimension = dimension;
-		this.bounds = boundingBox;
 	}
 
 	public void setPos(BlockPos pos) {
@@ -251,8 +255,4 @@ public class DestinationArea implements Area {
 			Rotation.CODEC.fieldOf("rotation").forGetter(DestinationArea::getRotation))).apply(instance, DestinationArea::new));
 
 	public static StreamCodec<ByteBuf, DestinationArea> STREAM_CODEC = ByteBufCodecs.fromCodec(CODEC);
-
-	public static DestinationArea from(Area area) {
-		return new DestinationArea(area.getDimension(), area.getBounds());
-	}
 }
