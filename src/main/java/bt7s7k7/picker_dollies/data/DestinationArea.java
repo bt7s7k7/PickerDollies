@@ -143,23 +143,40 @@ public class DestinationArea implements Area {
 		var pos = rawArea.getPos();
 		var size = rawArea.getSize();
 
+		settings.setRotation(this.rotation);
 		settings.setMirror(this.mirror);
-		// Compensate for mirroring pivot
+
+		// Compensate for mirroring and rotation pivot -- I couldn't explain this logic if I tried,
+		// it's just trial and error until the result is correct. Might be worth refactoring to look
+		// less scary at least, we'll see
 		if (this.mirror == Mirror.LEFT_RIGHT) {
 			pos = pos.offset(0, 0, size.getZ() - 1);
+
+			if (this.rotation == Rotation.CLOCKWISE_90) {
+				pos = pos.offset(0, 0, -size.getZ() + 1);
+			} else if (this.rotation == Rotation.COUNTERCLOCKWISE_90) {
+				pos = pos.offset(size.getX() - 1, 0, 0);
+			} else if (this.rotation == Rotation.CLOCKWISE_180) {
+				pos = pos.offset(size.getX() - 1, 0, -size.getZ() + 1);
+			}
 		} else if (this.mirror == Mirror.FRONT_BACK) {
 			pos = pos.offset(size.getX() - 1, 0, 0);
-		}
 
-		settings.setRotation(this.rotation);
-		// Compensate for rotation pivot -- this could probably be done via
-		// settings.setRotationPivot, but it's good to keep a united method.
-		if (this.rotation == Rotation.CLOCKWISE_90) {
-			pos = pos.offset(size.getX() - 1, 0, 0);
-		} else if (this.rotation == Rotation.COUNTERCLOCKWISE_90) {
-			pos = pos.offset(0, 0, size.getZ() - 1);
-		} else if (this.rotation == Rotation.CLOCKWISE_180) {
-			pos = pos.offset(size.getX() - 1, 0, size.getZ() - 1);
+			if (this.rotation == Rotation.CLOCKWISE_90) {
+				pos = pos.offset(0, 0, size.getZ() - 1);
+			} else if (this.rotation == Rotation.COUNTERCLOCKWISE_90) {
+				pos = pos.offset(-size.getX() + 1, 0, 0);
+			} else if (this.rotation == Rotation.CLOCKWISE_180) {
+				pos = pos.offset(-size.getX() + 1, 0, size.getZ() - 1);
+			}
+		} else {
+			if (this.rotation == Rotation.CLOCKWISE_90) {
+				pos = pos.offset(size.getX() - 1, 0, 0);
+			} else if (this.rotation == Rotation.COUNTERCLOCKWISE_90) {
+				pos = pos.offset(0, 0, size.getZ() - 1);
+			} else if (this.rotation == Rotation.CLOCKWISE_180) {
+				pos = pos.offset(size.getX() - 1, 0, size.getZ() - 1);
+			}
 		}
 
 		if (destroyExistingBlocks) {
